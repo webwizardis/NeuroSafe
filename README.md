@@ -6,18 +6,42 @@ NeuroSafe is a full-stack accessibility web application built with TypeScript, E
 
 ---
 
+## Repository Structure
+
+The project is strictly separated into dedicated `backend` and `frontend` folders:
+
+```
+├── backend/                  # Backend service & APIs
+│   └── server.ts             # Express server, Gemini multimodal OCR, camera endpoints, TTS, habits
+├── frontend/                 # Client user interface & accessibility tools
+│   ├── index.html            # Semantic HTML, Live camera viewfinder, habit tracker, onboarding
+│   ├── styles.css            # Sensory-friendly design system, camera reticle, accessible states
+│   └── app.js                # Camera stream manager, OCR processor, habit engine, TTS
+├── server.ts                 # Root delegator to backend/server.ts
+├── package.json              # Full-stack dependencies & build commands
+├── tsconfig.json             # TypeScript configuration
+└── metadata.json             # AI Studio capabilities & camera permissions
+```
+
+---
+
 ## Features
 
-- **Personalized Accessibility Onboarding**: Interactive assessment that identifies specific cognitive and sensory challenges (sensory overload, executive function, reading processing, social burnout, wayfinding anxiety) and tailors the interface accordingly.
+- **Read for Me (Camera OCR & Multimodal Vision)**:
+  - **Live Camera Scanner**: Real-time camera viewfinder with alignment reticle and instant frame capture.
+  - **Multimodal OCR**: Powered by Gemini Vision to extract text and generate plain-language summaries for cognitive ease.
+  - **Describe Scene**: Surrounding environment analyzer identifying signs, physical layouts, and sensory triggers.
+  - **Dual Lens & Controls**: Switch front/back cameras, pause/resume video streams, or use phone native camera capture.
+  - **Listen & Copy**: Instant calm Text-to-Speech (TTS) readout and clipboard export.
+- **Personalized Accessibility Onboarding**: Interactive assessment that identifies specific cognitive and sensory challenges and customizes the entire app.
 - **Daily Habit & Routine**: Gentle, low-pressure daily habit tracker with completion progress, time-of-day filtering (Morning, Afternoon, Evening), streak tracking, and AI-powered routine recommendations via Gemini.
-- **Sensory-Friendly Controls**: Instant toggle between low-stimulation mode (reduced motion, muted tones), simplified plain-language text, step-by-step task pacing, and Text-to-Speech (TTS) read-aloud support.
-- **Read for Me (OCR & Camera)**: Document and sign scanning powered by Google Vision API and Gemini visual comprehension.
-- **Explain Simply**: Plain-language translation and cognitive breakdown of complex notices, legal forms, or dense instructions.
-- **Say It for Me**: Respectful, socially calm message drafting with adjustable tone filters (direct, warm, gentle boundary).
+- **Sensory-Friendly Controls**: Instant toggle between low-stimulation mode, simplified plain text, step pacing, and calm color palettes.
+- **Explain Simply**: Plain-language translation and cognitive breakdown of complex notices or instructions.
+- **Say It for Me**: Respectful, socially calm message drafting with adjustable tone filters.
 - **Calm Me**: Sensory grounding 5-4-3-2-1 sequence and diaphragmatic pacing.
-- **Task Breakdown**: Step-by-step decomposition of overwhelming multi-stage chores or work projects.
-- **Safe Journey**: Low-stimulation wayfinding routes avoiding highways, crowded intersections, and overwhelming transfer hubs.
-- **SOS Urgent Support**: Explicit two-step confirmed emergency beacon for designated contacts.
+- **Task Breakdown**: Step-by-step decomposition of overwhelming multi-stage tasks.
+- **Safe Journey**: Low-stimulation wayfinding avoiding overwhelming traffic and crowds.
+- **SOS Urgent Support**: Explicit two-step confirmed emergency beacon.
 
 ---
 

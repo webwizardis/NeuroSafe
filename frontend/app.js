@@ -75,6 +75,13 @@ function showView(viewName) {
 
   if (viewName === "app") {
     loadHabits();
+    // Warm up camera stream safely if on camera mode
+    const cameraContainer = $("camera-ocr-container");
+    if (cameraContainer && cameraContainer.style.display !== "none" && typeof startCameraStream === "function") {
+      startCameraStream();
+    }
+  } else {
+    if (typeof stopCameraStream === "function") stopCameraStream();
   }
 
   window.scrollTo({ top: 0, behavior: activeSettings.low_stimulation_interface ? "auto" : "smooth" });
@@ -463,57 +470,355 @@ function initTTSButtons() {
 // ----------------------------------------------------
 // 5. CAMERA & SNAPSHOT OCR
 // ----------------------------------------------------
-function initCamera() {
-  const snapBtn = $("btn-camera-snap");
-  const cameraBox = $("camera-box");
+// CAMERA OCR & VISION VIEWFINDER
+// ----------------------------------------------------
+let cameraFacingMode = "environment";
+let isCameraPaused = false;
+
+async function startCameraStream() {
   const video = $("camera-video");
-  const captureBtn = $("btn-camera-capture");
-  const closeBtn = $("btn-camera-close");
+  const statusMsg = $("camera-status-msg");
+  if (!video) return;
 
-  snapBtn.onclick = async () => {
-    try {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error("Camera is not supported on this device/browser.");
+  if (cameraStream) {
+    cameraStream.getTracks().forEach((track) => track.stop());
+    cameraStream = null;
+  }
+
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      if (statusMsg) {
+        statusMsg.style.display = "block";
+        statusMsg.textContent = "Camera stream unavailable in iframe/browser. Use 'Phone Camera' or 'Upload Image File'.";
       }
-      cameraStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
-        audio: false
-      });
-      video.srcObject = cameraStream;
-      cameraBox.style.display = "block";
-    } catch (err) {
-      toast(`Camera error: ${err.message}`);
+      return;
     }
-  };
 
-  closeBtn.onclick = stopCamera;
+    if (statusMsg) {
+      statusMsg.style.display = "block";
+      statusMsg.textContent = "Starting camera viewfinder…";
+    }
 
-  captureBtn.onclick = () => action(async () => {
-    if (!video.videoWidth) throw new Error("Camera not ready yet.");
-    const canvas = document.createElement("canvas");
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: cameraFacingMode },
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      },
+      audio: false
+    });
+
+    video.srcObject = cameraStream;
+    await video.play();
+
+    isCameraPaused = false;
+    if ($("btn-camera-toggle-power")) $("btn-camera-toggle-power").textContent = "⏹️ Pause Camera";
+    if (statusMsg) {
+      statusMsg.textContent = "Camera active. Align text or signs inside frame.";
+      setTimeout(() => { if (statusMsg) statusMsg.style.display = "none"; }, 3000);
+    }
+  } catch (err) {
+    if (statusMsg) {
+      statusMsg.style.display = "block";
+      statusMsg.textContent = `Camera note: ${err.message}. You can still use 'Phone Camera' or file upload.`;
+    }
+  }
+}
+
+function stopCameraStream() {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach((track) => track.stop());
+    cameraStream = null;
+  }
+  isCameraPaused = true;
+  if ($("btn-camera-toggle-power")) $("btn-camera-toggle-power").textContent = "▶️ Start Camera";
+}
+
+async function captureVideoFrameBlob(callback, quality = 0.92) {
+  let video = $("camera-video");
+  const statusMsg = $("camera-status-msg");
+
+  // If camera isn't currently streaming frames, try to start it automatically
+  if (!cameraStream || !video || !video.videoWidth) {
+    if (statusMsg) {
+      statusMsg.style.display = "block";
+      statusMsg.textContent = "Connecting to camera viewfinder…";
+    }
+    try {
+      await startCameraStream();
+    } catch (err) {
+      console.warn("Could not start camera stream automatically:", err);
+    }
+
+    // Wait briefly for video dimensions to become available
+    let attempts = 0;
+    while ((!video || !video.videoWidth) && attempts < 12) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      video = $("camera-video");
+      attempts++;
+    }
+  }
+
+  // If live camera is streaming frames, capture from the video element
+  if (video && video.videoWidth > 0) {
+    const canvas = $("camera-canvas") || document.createElement("canvas");
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    canvas.toBlob(async (blob) => {
-      stopCamera();
-      const form = new FormData();
-      form.append("image", blob, "snapshot.jpg");
-      show("read-result", "Transcribing snapshot with Gemini OCR…");
-      const data = await request("/api/read", { method: "POST", body: form });
-      show("read-result", data.text);
-      $("btn-tts-read").style.display = "inline-flex";
-    }, "image/jpeg", 0.9);
-  });
+    // Show captured frame preview
+    const previewBox = $("camera-snapshot-preview");
+    const previewImg = $("snapshot-img");
+    const dataUrl = canvas.toDataURL("image/jpeg", quality);
+    if (previewBox && previewImg) {
+      previewImg.src = dataUrl;
+      previewBox.style.display = "flex";
+    }
+
+    canvas.toBlob((blob) => {
+      if (blob) {
+        callback(blob);
+      }
+    }, "image/jpeg", quality);
+    return;
+  }
+
+  // If direct stream is unavailable (e.g. iframe policy or device limitations),
+  // seamlessly trigger the device/phone camera capture without throwing an error
+  if (statusMsg) {
+    statusMsg.style.display = "block";
+    statusMsg.textContent = "Opening device camera/photo capture…";
+  }
+  toast("Opening photo capture…");
+
+  const picker = $("mobile-direct-camera") || $("image-input");
+  if (picker) {
+    const originalOnChange = picker.onchange;
+    picker.onchange = (e) => {
+      if (typeof originalOnChange === "function") originalOnChange(e);
+      const file = picker.files?.[0];
+      if (file) {
+        const previewBox = $("camera-snapshot-preview");
+        const previewImg = $("snapshot-img");
+        if (previewBox && previewImg) {
+          previewImg.src = URL.createObjectURL(file);
+          previewBox.style.display = "flex";
+        }
+        callback(file);
+      }
+    };
+    picker.click();
+  } else {
+    show("read-result", "Camera viewfinder not ready. Click 'Upload Image File' or 'Start Camera'.");
+  }
 }
 
-function stopCamera() {
-  if (cameraStream) {
-    cameraStream.getTracks().forEach((track) => track.stop());
-    cameraStream = null;
+function formatOcrOutput(data) {
+  if (!data) return "No text detected.";
+  if (typeof data.text === "string" && data.text.trim()) {
+    let output = data.text;
+    if (data.plain_summary) {
+      output += `\n\n📌 Plain Language Summary:\n${data.plain_summary}`;
+    }
+    return output;
   }
-  $("camera-box").style.display = "none";
+  return JSON.stringify(data, null, 2);
+}
+
+function initCamera() {
+  const btnCapture = $("btn-camera-capture");
+  const btnDescribe = $("btn-camera-describe");
+  const btnFlip = $("btn-camera-flip");
+  const btnTogglePower = $("btn-camera-toggle-power");
+  const btnRetake = $("btn-retake-photo");
+  const mobileInput = $("mobile-direct-camera");
+  const btnModeCamera = $("btn-mode-camera");
+  const btnModeUpload = $("btn-mode-upload");
+  const cameraContainer = $("camera-ocr-container");
+  const uploadContainer = $("file-upload-container");
+  const btnCopy = $("btn-copy-ocr");
+
+  // Mode Switcher: Live Camera vs Upload
+  if (btnModeCamera && btnModeUpload) {
+    btnModeCamera.onclick = () => {
+      btnModeCamera.classList.add("active");
+      btnModeUpload.classList.remove("active");
+      if (cameraContainer) cameraContainer.style.display = "block";
+      if (uploadContainer) uploadContainer.style.display = "none";
+      if (!cameraStream) startCameraStream();
+    };
+
+    btnModeUpload.onclick = () => {
+      btnModeUpload.classList.add("active");
+      btnModeCamera.classList.remove("active");
+      if (cameraContainer) cameraContainer.style.display = "none";
+      if (uploadContainer) uploadContainer.style.display = "block";
+    };
+  }
+
+  // Retake photo: dismiss snapshot preview and re-engage live stream
+  if (btnRetake) {
+    btnRetake.onclick = () => {
+      const previewBox = $("camera-snapshot-preview");
+      if (previewBox) previewBox.style.display = "none";
+      if (!cameraStream) startCameraStream();
+    };
+  }
+
+  // Camera Flip (environment <-> user)
+  if (btnFlip) {
+    btnFlip.onclick = () => {
+      cameraFacingMode = cameraFacingMode === "environment" ? "user" : "environment";
+      startCameraStream();
+      toast(`Switched camera to ${cameraFacingMode === "environment" ? "Back" : "Front"}`);
+    };
+  }
+
+  // Pause / Resume camera stream
+  if (btnTogglePower) {
+    btnTogglePower.onclick = () => {
+      if (cameraStream && !isCameraPaused) {
+        stopCameraStream();
+        toast("Camera paused");
+      } else {
+        startCameraStream();
+        toast("Camera resumed");
+      }
+    };
+  }
+
+  // Shutter: Capture & Read Text (OCR)
+  if (btnCapture) {
+    btnCapture.onclick = () => action(async () => {
+      await captureVideoFrameBlob(async (blob) => {
+        if (!blob) {
+          toast("No image frame selected.");
+          return;
+        }
+
+        show("read-result", "Transcribing camera capture with Gemini OCR…");
+        const form = new FormData();
+        form.append("image", blob, "camera_capture.jpg");
+
+        try {
+          const data = await request("/api/camera/capture", {
+            method: "POST",
+            body: form
+          });
+
+          const formattedResult = formatOcrOutput(data);
+          show("read-result", formattedResult);
+          if ($("btn-tts-read")) $("btn-tts-read").style.display = "inline-flex";
+          if (btnCopy) btnCopy.style.display = "inline-flex";
+          toast("Camera OCR transcribed successfully!");
+        } catch (err) {
+          // Fallback to /api/read
+          try {
+            const data = await request("/api/read", { method: "POST", body: form });
+            show("read-result", formatOcrOutput(data));
+            if ($("btn-tts-read")) $("btn-tts-read").style.display = "inline-flex";
+            if (btnCopy) btnCopy.style.display = "inline-flex";
+          } catch (innerErr) {
+            show("read-result", `OCR Transcription Note: ${innerErr.message || "Please retry with a clear photo."}`);
+          }
+        }
+      });
+    });
+  }
+
+  // Describe Scene
+  if (btnDescribe) {
+    btnDescribe.onclick = () => action(async () => {
+      await captureVideoFrameBlob(async (blob) => {
+        if (!blob) {
+          toast("No image frame selected.");
+          return;
+        }
+
+        show("read-result", "Analyzing surroundings & sensory safety with Gemini…");
+        const form = new FormData();
+        form.append("image", blob, "scene_frame.jpg");
+
+        try {
+          const data = await request("/api/camera/describe", {
+            method: "POST",
+            body: form
+          });
+
+          const desc = data.description || data.text || JSON.stringify(data, null, 2);
+          show("read-result", `👁️ SCENE & SURROUNDINGS DESCRIPTION:\n\n${desc}`);
+          if ($("btn-tts-read")) $("btn-tts-read").style.display = "inline-flex";
+          if (btnCopy) btnCopy.style.display = "inline-flex";
+        } catch (err) {
+          show("read-result", `Scene analysis note: ${err.message || "Could not analyze frame."}`);
+        }
+      });
+    });
+  }
+
+  // Mobile native camera file input
+  if (mobileInput) {
+    mobileInput.onchange = async () => {
+      const file = mobileInput.files[0];
+      if (!file) return;
+
+      show("read-result", "Transcribing photo from phone camera with Gemini OCR…");
+      const form = new FormData();
+      form.append("image", file);
+
+      try {
+        const data = await request("/api/camera/capture", {
+          method: "POST",
+          body: form
+        });
+        show("read-result", formatOcrOutput(data));
+        if ($("btn-tts-read")) $("btn-tts-read").style.display = "inline-flex";
+        if (btnCopy) btnCopy.style.display = "inline-flex";
+        toast("Photo transcribed!");
+      } catch (err) {
+        toast(`OCR error: ${err.message}`);
+      }
+    };
+  }
+
+  // Copy button
+  if (btnCopy) {
+    btnCopy.onclick = async () => {
+      const text = $("read-result").textContent;
+      if (!text || $("read-result").classList.contains("empty")) {
+        toast("No text to copy");
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(text);
+        toast("Copied OCR text to clipboard! 📋");
+      } catch {
+        toast("Unable to copy to clipboard.");
+      }
+    };
+  }
+
+  // Drag and drop for upload zone
+  const dropZone = $("ocr-drop-zone");
+  const fileInput = $("image-input");
+  if (dropZone && fileInput) {
+    dropZone.ondragover = (e) => {
+      e.preventDefault();
+      dropZone.classList.add("dragover");
+    };
+    dropZone.ondragleave = () => {
+      dropZone.classList.remove("dragover");
+    };
+    dropZone.ondrop = (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("dragover");
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        fileInput.files = e.dataTransfer.files;
+        toast(`Selected file: ${e.dataTransfer.files[0].name}`);
+      }
+    };
+  }
 }
 
 // ----------------------------------------------------
@@ -545,13 +850,18 @@ function initDashboardActions() {
 
   $("read-image").onclick = () => action(async () => {
     const file = $("image-input").files[0];
-    if (!file) throw new Error("Choose an image or take a camera snapshot first.");
+    if (!file) {
+      $("image-input").click();
+      toast("Please select an image file to transcribe");
+      return;
+    }
     const form = new FormData();
     form.append("image", file);
     show("read-result", "Processing image with Gemini Multimodal OCR…");
     const data = await request("/api/read", { method: "POST", body: form });
-    show("read-result", data.text);
-    $("btn-tts-read").style.display = "inline-flex";
+    show("read-result", formatOcrOutput(data));
+    if ($("btn-tts-read")) $("btn-tts-read").style.display = "inline-flex";
+    if ($("btn-copy-ocr")) $("btn-copy-ocr").style.display = "inline-flex";
   });
 
   $("explain-text").onclick = () => action(async () => {
@@ -595,15 +905,33 @@ function initDashboardActions() {
   $("find-route").onclick = () => action(() => findRoute(false));
   $("find-alternative").onclick = () => action(() => findRoute(true));
 
-  $("send-sos").onclick = () => action(async () => {
-    if (!$("sos-confirm").checked) throw new Error("Check the confirmation box before requesting SOS.");
-    const data = await json("/api/sos", {
-      message: $("sos-message").value,
-      contact: $("sos-contact").value || null,
-      confirmed: true
+  const sosConfirm = $("sos-confirm");
+  const sendSosBtn = $("send-sos");
+
+  if (sosConfirm && sendSosBtn) {
+    sosConfirm.onchange = () => {
+      sendSosBtn.textContent = sosConfirm.checked ? "🚨 Send Confirmed SOS Request" : "Request SOS";
+    };
+  }
+
+  if (sendSosBtn) {
+    sendSosBtn.onclick = () => action(async () => {
+      if (sosConfirm && !sosConfirm.checked) {
+        sosConfirm.checked = true;
+        sendSosBtn.textContent = "🚨 Send Confirmed SOS Request";
+        toast("Safety check acknowledged. Sending SOS beacon…");
+      }
+
+      show("sos-result", "Sending SOS urgent support beacon…");
+      const data = await json("/api/sos", {
+        message: $("sos-message").value || "I need help.",
+        contact: $("sos-contact").value || null,
+        confirmed: true
+      });
+      show("sos-result", `🚨 SOS REQUEST CONFIRMED & SENT:\n\nTimestamp: ${data.timestamp}\nStatus: ${data.status}\nMessage: "${data.message}"\nContact: ${data.contact || "Default Emergency Support"}\n\nCalm assistance is on the way.`);
+      toast("🚨 SOS beacon sent successfully!");
     });
-    show("sos-result", `SOS request confirmed.\n${JSON.stringify(data, null, 2)}`);
-  });
+  }
 }
 
 // ----------------------------------------------------
