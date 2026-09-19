@@ -98,11 +98,9 @@ export const MASTER_PREWRITTEN_COMMANDS = {
   ],
 };
 
-// Formatter to append prewritten commands to text results for UI visibility
-function appendPrewrittenCommands(text: string, commands: string[]): string {
-  if (!commands || commands.length === 0) return text;
-  const commandLines = commands.map((c) => `• ${c}`).join("\n");
-  return `${text.trim()}\n\n─── Prewritten Commands ───\n${commandLines}`;
+// Formatter for text results
+function appendPrewrittenCommands(text: string, _commands?: string[]): string {
+  return text ? text.trim() : "";
 }
 
 // ----------------------------------------------------
@@ -161,11 +159,6 @@ function apiKeyAuthMiddleware(req: Request, res: Response, next: NextFunction): 
     detail: "Unauthorized. A valid NeuroSafe API key is required to access this endpoint.",
     error: "invalid_or_missing_api_key",
     help: "Pass your API key in the 'x-api-key' header, 'Authorization: Bearer <key>' header, or '?api_key=' query parameter.",
-    prewritten_commands: [
-      'curl -H "x-api-key: YOUR_API_KEY" http://localhost:3000/api/meta',
-      'curl -H "Authorization: Bearer YOUR_API_KEY" http://localhost:3000/api/calm',
-      'curl -X POST -H "x-api-key: YOUR_API_KEY" -H "Content-Type: application/json" -d \'{"task":"Plan morning"}\' http://localhost:3000/api/tasks/breakdown',
-    ],
   });
 }
 
@@ -729,7 +722,7 @@ interface OcrResult {
   summary: string;
   word_count: number;
   source: string;
-  prewritten_commands: string[];
+  prewritten_commands?: string[];
 }
 
 async function performHighAccuracyOcr(
@@ -738,12 +731,6 @@ async function performHighAccuracyOcr(
   filename?: string
 ): Promise<OcrResult> {
   const base64Data = imageBuffer.toString("base64");
-  const defaultCommands = [
-    'Explain text simply: "Explain the main message from this document"',
-    'Break into tasks: "Create an action checklist from these instructions"',
-    'Draft reply: "Write a polite reply acknowledging receipt of this notice"',
-    'Read aloud: "Listen to the transcription with text-to-speech"',
-  ];
 
   // 1. Try Gemini Multimodal Vision with fallback across models
   const ocrText = await generateContentWithFallback({
@@ -771,7 +758,7 @@ async function performHighAccuracyOcr(
 
   if (ocrText) {
     const wordCount = ocrText.split(/\s+/).filter(Boolean).length;
-    const formattedDisplay = appendPrewrittenCommands(ocrText, defaultCommands);
+    const formattedDisplay = appendPrewrittenCommands(ocrText);
 
     return {
       text: formattedDisplay,
@@ -780,7 +767,6 @@ async function performHighAccuracyOcr(
       summary: "Transcribed with Gemini Multimodal OCR.",
       word_count: wordCount,
       source: "gemini_multimodal_ocr",
-      prewritten_commands: defaultCommands,
     };
   }
 
@@ -812,7 +798,7 @@ async function performHighAccuracyOcr(
 
       if (annotation.trim()) {
         const wordCount = annotation.split(/\s+/).filter(Boolean).length;
-        const formattedDisplay = appendPrewrittenCommands(annotation.trim(), defaultCommands);
+        const formattedDisplay = appendPrewrittenCommands(annotation.trim());
         return {
           text: formattedDisplay,
           raw_text: annotation.trim(),
@@ -820,7 +806,6 @@ async function performHighAccuracyOcr(
           summary: "Extracted via Google Cloud Vision OCR.",
           word_count: wordCount,
           source: "google_vision",
-          prewritten_commands: defaultCommands,
         };
       }
     } catch (err) {
@@ -828,10 +813,10 @@ async function performHighAccuracyOcr(
     }
   }
 
-  // 3. Informative fallback with diagnostic details and prewritten commands
+  // 3. Informative fallback with diagnostic details
   const sizeKb = (imageBuffer.length / 1024).toFixed(1);
   const fallbackMessage = `Image received: ${filename || "camera_frame.jpg"} (${sizeKb} KB, ${mimeType}).\n\nOCR Processing Note:\nTo enable live optical character recognition with high-accuracy layout preservation, configure GEMINI_API_KEY or GOOGLE_VISION_API_KEY in your settings.`;
-  const formattedDisplay = appendPrewrittenCommands(fallbackMessage, defaultCommands);
+  const formattedDisplay = appendPrewrittenCommands(fallbackMessage);
 
   return {
     text: formattedDisplay,
@@ -840,7 +825,6 @@ async function performHighAccuracyOcr(
     summary: "Image received and validated.",
     word_count: fallbackMessage.split(/\s+/).filter(Boolean).length,
     source: "local_image_processor",
-    prewritten_commands: defaultCommands,
   };
 }
 
@@ -854,11 +838,6 @@ app.get("/health", (req: Request, res: Response) => {
     status: "ok",
     timestamp: new Date().toISOString(),
     api_key_required: Boolean(CONFIGURED_API_KEY),
-    prewritten_commands: [
-      'curl http://localhost:3000/api/meta',
-      'curl http://localhost:3000/api/commands',
-      'curl http://localhost:3000/api/calm',
-    ],
   });
 });
 
@@ -880,30 +859,27 @@ app.get("/api/meta", (req: Request, res: Response) => {
       "task_breakdown",
       "low_stimulation_safe_journey_routing",
       "manual_sos_confirmation",
-      "prewritten_commands_library",
     ],
     api_key_required: Boolean(CONFIGURED_API_KEY),
-    prewritten_commands: MASTER_PREWRITTEN_COMMANDS,
   });
 });
 
-// Master Prewritten Commands Catalog
+// Commands Catalog
 app.get("/api/commands", (req: Request, res: Response) => {
   res.json({
-    description: "Ready-to-use accessibility commands, prompts, and actions across all NeuroSafe features.",
-    commands: MASTER_PREWRITTEN_COMMANDS,
-    prewritten_commands: [
-      "POST /api/profile/suggest with your accessibility preferences",
-      "GET /api/habits to view daily routine and progress",
-      "POST /api/habits with a simple goal to track",
-      "POST /api/camera/capture with a photo or camera frame",
-      "POST /api/read with an uploaded document or sign",
-      "POST /api/explain with complex text",
-      "POST /api/say with intent to draft a kind message",
-      "GET /api/calm for instant grounding sequence",
-      "POST /api/tasks/breakdown to split an overwhelming task",
-      "POST /api/route for calm, low-stimulation directions",
-      "POST /api/sos with explicit confirmation for urgent support",
+    description: "NeuroSafe API endpoints and capabilities.",
+    endpoints: [
+      "POST /api/profile/suggest",
+      "GET /api/habits",
+      "POST /api/habits",
+      "POST /api/camera/capture",
+      "POST /api/read",
+      "POST /api/explain",
+      "POST /api/say",
+      "GET /api/calm",
+      "POST /api/tasks/breakdown",
+      "POST /api/route",
+      "POST /api/sos",
     ],
   });
 });
@@ -922,10 +898,6 @@ app.get("/api/key/status", (req: Request, res: Response) => {
     instructions: CONFIGURED_API_KEY
       ? "Pass your key in 'x-api-key' header or 'Authorization: Bearer <key>'"
       : "API key protection is optional. Direct access enabled.",
-    prewritten_commands: [
-      'curl -H "x-api-key: YOUR_KEY" http://localhost:3000/api/commands',
-      'curl -H "x-api-key: YOUR_KEY" http://localhost:3000/api/calm',
-    ],
   });
 });
 
@@ -954,7 +926,6 @@ app.post("/api/profile/suggest", async (req: Request, res: Response) => {
         const parsed = JSON.parse(aiText);
         return res.json({
           suggestion: parsed,
-          prewritten_commands: MASTER_PREWRITTEN_COMMANDS.profile,
         });
       } catch {
         // Fall through to deterministic rule-based suggestion
@@ -964,13 +935,11 @@ app.post("/api/profile/suggest", async (req: Request, res: Response) => {
     const suggestion = ruleBasedProfileSuggest(userInput);
     return res.json({
       suggestion,
-      prewritten_commands: MASTER_PREWRITTEN_COMMANDS.profile,
     });
   } catch {
     const suggestion = ruleBasedProfileSuggest(userInput);
     return res.json({
       suggestion,
-      prewritten_commands: MASTER_PREWRITTEN_COMMANDS.profile,
     });
   }
 });
@@ -996,14 +965,7 @@ app.post("/api/profile/approve", (req: Request, res: Response) => {
   };
 
   _profiles.set(profileId, profile);
-  return res.status(201).json({
-    ...profile,
-    prewritten_commands: [
-      `View profile: GET /api/profile/${profileId}`,
-      'Explain with approved settings: POST /api/explain',
-      'Break tasks with approved settings: POST /api/tasks/breakdown',
-    ],
-  });
+  return res.status(201).json(profile);
 });
 
 // ----------------------------------------------------
@@ -1014,13 +976,7 @@ app.get("/api/profile/:profile_id", (req: Request, res: Response) => {
   if (!profile) {
     return res.status(404).json({ detail: `Profile '${req.params.profile_id}' not found.` });
   }
-  return res.json({
-    ...profile,
-    prewritten_commands: [
-      'Suggest updated preferences: POST /api/profile/suggest',
-      'Break down task: POST /api/tasks/breakdown',
-    ],
-  });
+  return res.json(profile);
 });
 
 // ----------------------------------------------------
@@ -1470,7 +1426,6 @@ app.post("/api/camera/describe", upload.single("image") as any, async (req: Requ
     return res.json({
       description: formatted,
       raw_description: description,
-      prewritten_commands: MASTER_PREWRITTEN_COMMANDS.camera,
     });
   } catch (err: any) {
     return res.status(500).json({ detail: `Camera describe error: ${err?.message || err}` });
@@ -1548,7 +1503,6 @@ Return a JSON object with:
 
     return res.json({
       sensory_analysis: analysisResult,
-      prewritten_commands: MASTER_PREWRITTEN_COMMANDS.camera,
     });
   } catch (err: any) {
     return res.status(500).json({ detail: `Camera analysis error: ${err?.message || err}` });
@@ -1575,7 +1529,6 @@ app.post("/api/explain", async (req: Request, res: Response) => {
     text: formattedText,
     raw_explanation: simplified,
     source: "gemini_plain_language",
-    prewritten_commands: MASTER_PREWRITTEN_COMMANDS.explain,
   });
 });
 
@@ -1599,7 +1552,6 @@ app.post("/api/say", async (req: Request, res: Response) => {
     text: formattedText,
     raw_message: drafted,
     source: "gemini_message_assistant",
-    prewritten_commands: MASTER_PREWRITTEN_COMMANDS.say,
   });
 });
 
@@ -1617,7 +1569,6 @@ app.get("/api/calm", (req: Request, res: Response) => {
   res.json({
     steps,
     disclaimer: "This is a grounding sequence, not medical advice.",
-    prewritten_commands: MASTER_PREWRITTEN_COMMANDS.calm,
   });
 });
 
@@ -1652,7 +1603,6 @@ app.get("/api/habits", (req: Request, res: Response) => {
       all_completed: totalCount > 0 && completedCount === totalCount,
       today,
     },
-    prewritten_commands: MASTER_PREWRITTEN_COMMANDS.habits,
   });
 });
 
@@ -1853,7 +1803,6 @@ Return ONLY a valid JSON array of objects with the following keys:
 
   return res.json({
     suggestions,
-    prewritten_commands: MASTER_PREWRITTEN_COMMANDS.habits,
   });
 });
 
@@ -1876,7 +1825,6 @@ app.post("/api/tasks/breakdown", async (req: Request, res: Response) => {
     text: formattedText,
     raw_steps: result,
     source: "gemini_task_breakdown",
-    prewritten_commands: MASTER_PREWRITTEN_COMMANDS.tasks,
   });
 });
 
@@ -2001,7 +1949,6 @@ app.post("/api/sos", (req: Request, res: Response) => {
   if (!isConfirmed) {
     return res.status(409).json({
       detail: "SOS requires explicit confirmation.",
-      prewritten_commands: MASTER_PREWRITTEN_COMMANDS.sos,
     });
   }
 
@@ -2010,7 +1957,6 @@ app.post("/api/sos", (req: Request, res: Response) => {
     message: message || "I need help.",
     contact: contact || null,
     timestamp: new Date().toISOString(),
-    prewritten_commands: MASTER_PREWRITTEN_COMMANDS.sos,
   });
 });
 
@@ -2034,9 +1980,11 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 // ----------------------------------------------------
 // FRONTEND STATIC FILE SERVING & SPA FALLBACK
 // ----------------------------------------------------
-const frontendPath = fs.existsSync(path.join(process.cwd(), "frontend"))
-  ? path.join(process.cwd(), "frontend")
-  : path.resolve(__dirname, "../frontend");
+const distPath = path.join(process.cwd(), "frontend/dist");
+const legacyPath = path.join(process.cwd(), "frontend");
+const frontendPath = (fs.existsSync(distPath) && fs.existsSync(path.join(distPath, "index.html")))
+  ? distPath
+  : (fs.existsSync(legacyPath) ? legacyPath : path.resolve(__dirname, "../frontend"));
 app.use(express.static(frontendPath));
 
 app.get("*", (req: Request, res: Response) => {
