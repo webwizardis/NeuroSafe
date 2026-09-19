@@ -319,6 +319,25 @@
           <div><span class="step">04</span><h2>Say It for Me</h2></div>
           <button id="btn-tts-say" class="tts-button" title="Read result aloud" style="display:none;">🔊 Listen</button>
         </div>
+
+        <!-- Quick Speak: instant preset messages spoken aloud -->
+        <div class="quick-speak-section">
+          <h3 class="quick-speak-title">Quick Speak</h3>
+          <p class="muted small">Tap a message and NeuroSafe will speak it for you instantly.</p>
+          <div class="quick-speak-buttons" id="quick-speak-buttons">
+            <button type="button" class="quick-speak-btn" data-message="I need some time to process this.">I need some time to process this.</button>
+            <button type="button" class="quick-speak-btn" data-message="Please speak more slowly.">Please speak more slowly.</button>
+            <button type="button" class="quick-speak-btn" data-message="I need a break.">I need a break.</button>
+            <button type="button" class="quick-speak-btn" data-message="I don't understand. Could you explain that again?">I don't understand. Could you explain that again?</button>
+            <button type="button" class="quick-speak-btn" data-message="Please give me a moment.">Please give me a moment.</button>
+            <button type="button" class="quick-speak-btn" data-message="I need help.">I need help.</button>
+          </div>
+          <button type="button" id="btn-stop-speaking" class="stop-speaking-btn" style="display:none;">■ Stop Speaking</button>
+        </div>
+
+        <div class="say-divider"><span>or draft a custom message</span></div>
+
+        <!-- AI Message Drafting -->
         <input id="say-intent" placeholder="What do you want to say? (e.g. Decline invitation due to fatigue)">
         <input id="say-context" placeholder="Optional context (e.g. To coworker, keep it friendly)">
         <button id="say-message">Draft message</button>

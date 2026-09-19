@@ -1,5 +1,5 @@
 const API = localStorage.getItem("neurosafeApi") || "";
-let sessionToken = localStorage.getItem("neurosafe_token") || null;
+let sessionToken = localStorage.getItem("neurosafe_token") || sessionStorage.getItem("neurosafe_token") || null;
 let currentUser = null;
 let activeSettings = {
   low_stimulation_interface: true,
@@ -187,14 +187,30 @@ async function handleAuthSubmit() {
 
 async function handleDemoAuth() {
   try {
+    const remember = $("auth-remember").checked;
     const data = await json("/api/auth/demo", {});
     sessionToken = data.token;
     currentUser = data.user;
-    localStorage.setItem("neurosafe_token", sessionToken);
+
+    if (remember) {
+      localStorage.setItem("neurosafe_token", sessionToken);
+    } else {
+      sessionStorage.setItem("neurosafe_token", sessionToken);
+    }
 
     updateUserDisplay();
     toast("Signed in as Demo User!");
-    showView("assessment");
+
+    if (currentUser.accessibility_profile && Object.keys(currentUser.accessibility_profile).length > 0) {
+      applyCustomization(
+        currentUser.accessibility_profile,
+        "Loaded your saved accessibility profile.",
+        currentUser.problem_history || []
+      );
+      showView("app");
+    } else {
+      showView("assessment");
+    }
   } catch (err) {
     showAuthError(err.message);
   }
@@ -457,6 +473,63 @@ function speakText(text) {
 
   window.speechSynthesis.speak(utterance);
   toast("🔊 Reading aloud…");
+}
+
+let isCurrentlySpeaking = false;
+
+function speakMessage(message) {
+  if (!("speechSynthesis" in window)) {
+    toast("Text-to-speech is not supported on this browser.");
+    return;
+  }
+  if (!message || !message.trim()) return;
+
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(message);
+  utterance.rate = 0.9;
+  utterance.pitch = 1.0;
+
+  utterance.onstart = () => {
+    isCurrentlySpeaking = true;
+    const stopBtn = $("btn-stop-speaking");
+    if (stopBtn) stopBtn.style.display = "inline-flex";
+  document.querySelectorAll(".quick-speak-btn").forEach((b) => b.classList.remove("speaking"));
+  };
+  utterance.onend = () => {
+    isCurrentlySpeaking = false;
+    const stopBtn = $("btn-stop-speaking");
+    if (stopBtn) stopBtn.style.display = "none";
+    document.querySelectorAll(".quick-speak-btn").forEach((b) => b.classList.remove("speaking"));
+  };
+
+  window.speechSynthesis.speak(utterance);
+  toast("🔊 Speaking…");
+}
+
+function stopSpeaking() {
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+  }
+  isCurrentlySpeaking = false;
+  const stopBtn = $("btn-stop-speaking");
+  if (stopBtn) stopBtn.style.display = "none";
+  document.querySelectorAll(".quick-speak-btn").forEach((b) => b.classList.remove("speaking"));
+}
+
+function initQuickSpeak() {
+  const stopBtn = $("btn-stop-speaking");
+  if (stopBtn) {
+    stopBtn.onclick = () => stopSpeaking();
+  }
+
+  document.querySelectorAll(".quick-speak-btn").forEach((btn) => {
+    btn.onclick = () => {
+      const message = btn.getAttribute("data-message") || btn.textContent.trim();
+      document.querySelectorAll(".quick-speak-btn").forEach((b) => b.classList.remove("speaking"));
+      btn.classList.add("speaking");
+      speakMessage(message);
+    };
+  });
 }
 
 function initTTSButtons() {
@@ -1345,6 +1418,7 @@ async function initializeApp() {
   initAssessmentUI();
   initTogglePills();
   initTTSButtons();
+  initQuickSpeak();
   initCamera();
   initDashboardActions();
   initHabitsUI();

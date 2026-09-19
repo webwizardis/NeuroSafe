@@ -1447,3 +1447,78 @@ body.low-stim .habit-progress-bar-fill {
   }
 }
 
+/* ====================================================
+   QUICK SPEAK (Say It for Me) STYLING
+   ==================================================== */
+.quick-speak-section {
+  margin-bottom: 16px;
+}
+.quick-speak-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.quick-speak-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 10px 0 12px;
+}
+.quick-speak-btn {
+  width: 100%;
+  padding: 14px 18px;
+  background: #ffffff;
+  color: var(--ink);
+  border: 2px solid var(--line);
+  border-radius: var(--inner-radius);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.quick-speak-btn:hover {
+  border-color: var(--green);
+  background: var(--mint-light);
+}
+.quick-speak-btn:active {
+  border-color: var(--green);
+  background: var(--mint);
+}
+.quick-speak-btn.speaking {
+  border-color: var(--green);
+  background: var(--mint);
+  box-shadow: 0 0 0 2px rgba(33, 107, 84, 0.15);
+}
+.stop-speaking-btn {
+  margin-top: 4px;
+  padding: 12px 22px;
+  background: #ffffff;
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: var(--inner-radius);
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.stop-speaking-btn:hover {
+  background: #f0f0f0;
+}
+.say-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 16px 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.say-divider::before, .say-divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid var(--line);
+}
+.say-divider span {
+  padding: 0 12px;
+}
+
