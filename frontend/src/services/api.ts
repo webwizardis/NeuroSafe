@@ -196,7 +196,7 @@ export const api = {
 
   // Task Breakdown
   async breakdownTask(task: string, currentEnergy: string = "medium"): Promise<{ text: string; steps?: string[]; [key: string]: any }> {
-    return json("/api/tasks/breakdown", { task, current_energy: currentEnergy });
+    return json("/api/tasks/breakdown", { task, energyLevel: currentEnergy, current_energy: currentEnergy });
   },
 
   // Safe Journey Routing

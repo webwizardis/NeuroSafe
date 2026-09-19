@@ -78,6 +78,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             key={cat.id}
             type="button"
             role="tab"
+            data-speech={cat.label.replace(/^[^\w\s]+/, "").trim()}
             aria-selected={activeCategory === cat.id}
             onClick={() => setActiveCategory(cat.id as any)}
             style={{
@@ -118,7 +119,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Executive Function & Habits Group */}
         {(activeCategory === "all" || activeCategory === "executive") && (
           <>
-            <TaskBreakdown onToast={onToast} readAloudDefault={isReadAloud} />
+            <TaskBreakdown
+              onToast={onToast}
+              readAloudDefault={isReadAloud}
+              stepByStepMode={settings.step_by_step_tasks}
+            />
             <DailyHabits onToast={onToast} problems={problems} />
           </>
         )}

@@ -18,6 +18,12 @@ export interface AccessibilitySettings {
   read_aloud?: boolean;
   hide_complex_tools?: boolean;
   emergency_sos_prominent?: boolean;
+  brightness?: number; // 50 to 110 (%)
+  contrast?: number; // 70 to 130 (%)
+  warmth?: "natural" | "amber" | "mint";
+  font_scale?: "standard" | "large" | "xlarge";
+  reduced_motion?: boolean;
+  audio_chimes?: boolean;
   [key: string]: any;
 }
 

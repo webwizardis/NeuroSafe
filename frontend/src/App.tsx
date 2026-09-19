@@ -6,7 +6,7 @@ import { AuthView } from "./components/AuthView";
 import { AssessmentView } from "./components/AssessmentView";
 import { DashboardView } from "./components/DashboardView";
 import { Toast } from "./components/Toast";
-import { registerSpeechListener, stopSpeaking } from "./utils/speech";
+import { registerSpeechListener, stopSpeaking, speak } from "./utils/speech";
 
 export const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -32,20 +32,107 @@ export const App: React.FC = () => {
     });
   }, []);
 
-  // Synchronize CSS class modifiers on document.body for low-stimulation & high legibility
+  // Synchronize CSS class modifiers, brightness, contrast, and warmth on document
   useEffect(() => {
+    // Low stimulation class
     if (settings.low_stimulation_interface) {
       document.body.classList.add("low-stimulation");
     } else {
       document.body.classList.remove("low-stimulation");
     }
 
-    if (settings.plain_language_mode) {
+    // Simplified / Plain language text
+    if (settings.plain_language_mode || settings.simplify_text) {
       document.body.classList.add("simplified-text");
     } else {
       document.body.classList.remove("simplified-text");
     }
+
+    // Dynamic Screen Brightness:
+    // If explicitly specified in settings, use it; otherwise default: 85% for low stim, 100% normal
+    const currentBrightness = typeof settings.brightness === "number"
+      ? settings.brightness
+      : (settings.low_stimulation_interface ? 85 : 100);
+    document.documentElement.style.setProperty("--app-brightness", `${currentBrightness}%`);
+
+    // Dynamic Contrast
+    const currentContrast = typeof settings.contrast === "number"
+      ? settings.contrast
+      : (settings.low_stimulation_interface ? 92 : 100);
+    document.documentElement.style.setProperty("--app-contrast", `${currentContrast}%`);
+
+    // Color warmth tint
+    document.body.classList.remove("warmth-amber", "warmth-mint");
+    document.documentElement.classList.remove("warmth-amber", "warmth-mint");
+    if (settings.warmth === "amber") {
+      document.body.classList.add("warmth-amber");
+      document.documentElement.classList.add("warmth-amber");
+    } else if (settings.warmth === "mint") {
+      document.body.classList.add("warmth-mint");
+      document.documentElement.classList.add("warmth-mint");
+    }
+
+    // Font scaling
+    document.body.classList.remove("font-scale-large", "font-scale-xlarge");
+    if (settings.font_scale === "large") {
+      document.body.classList.add("font-scale-large");
+    } else if (settings.font_scale === "xlarge") {
+      document.body.classList.add("font-scale-xlarge");
+    }
+
+    // Reduced motion
+    if (settings.reduced_motion) {
+      document.body.classList.add("reduced-motion");
+    } else {
+      document.body.classList.remove("reduced-motion");
+    }
   }, [settings]);
+
+  // Global Audio Read-Aloud button speaker:
+  // When Audio Read Aloud is active, pressing any button immediately speaks its name aloud!
+  useEffect(() => {
+    if (!settings.read_aloud_enabled) return;
+
+    const handleGlobalButtonClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+
+      const interactive = target.closest(
+        "button, [role='button'], a[role='button'], input[type='button'], input[type='submit'], summary, [role='tab'], [role='checkbox'], [role='switch']"
+      ) as HTMLElement | null;
+
+      if (!interactive) return;
+
+      // Extract spoken label
+      let textToSpeak = interactive.getAttribute("data-speech");
+      if (!textToSpeak) {
+        const ariaLabel = interactive.getAttribute("aria-label");
+        if (ariaLabel) {
+          textToSpeak = ariaLabel;
+        } else {
+          // Extract text content cleanly
+          const clone = interactive.cloneNode(true) as HTMLElement;
+          clone.querySelectorAll("[aria-hidden='true'], svg, img").forEach((n) => n.remove());
+          let txt = clone.textContent || "";
+          txt = txt
+            .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{27BF}\u{1F100}-\u{1F1FF}]/gu, "")
+            .replace(/[✓✔▲▼✕✖★☆•·\(\)]/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
+          textToSpeak = txt;
+        }
+      }
+
+      if (textToSpeak && textToSpeak.trim().length > 0) {
+        speak(textToSpeak.trim());
+      }
+    };
+
+    document.addEventListener("click", handleGlobalButtonClick, true);
+    return () => {
+      document.removeEventListener("click", handleGlobalButtonClick, true);
+    };
+  }, [settings.read_aloud_enabled]);
 
   // Initial Auth & Health Check
   useEffect(() => {

@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { api } from "../services/api";
 import { speak, stopSpeaking, isSpeechActive } from "../utils/speech";
+import { playRewardChime } from "../utils/audioChime";
 
 interface SayItForMeProps {
   onToast: (message: string, type?: "info" | "success" | "error") => void;
@@ -40,6 +41,11 @@ export const SayItForMe: React.FC<SayItForMeProps> = ({ onToast, readAloudDefaul
   const [tone, setTone] = useState("gentle_polite");
   const [loading, setLoading] = useState(false);
   const [draftResult, setDraftResult] = useState<string | null>(null);
+  const [rewardEarned, setRewardEarned] = useState(false);
+  const [peaceTokens, setPeaceTokens] = useState<number>(() => {
+    const saved = localStorage.getItem("neurosafe_peace_tokens");
+    return saved ? parseInt(saved, 10) : 1;
+  });
 
   const handleDraft = async () => {
     if (!intent.trim()) {
@@ -48,6 +54,7 @@ export const SayItForMe: React.FC<SayItForMeProps> = ({ onToast, readAloudDefaul
     }
 
     setLoading(true);
+    setRewardEarned(false);
     try {
       const data = await api.sayMessage(intent.trim(), context.trim() || null, tone);
       setDraftResult(data.text);
@@ -73,6 +80,15 @@ export const SayItForMe: React.FC<SayItForMeProps> = ({ onToast, readAloudDefaul
     onToast(`🔊 Speaking phrase…`, "info");
   };
 
+  const handleCompleteTask = () => {
+    const newCount = peaceTokens + 1;
+    setPeaceTokens(newCount);
+    localStorage.setItem("neurosafe_peace_tokens", String(newCount));
+    setRewardEarned(true);
+    playRewardChime();
+    onToast("🌟 Reward unlocked! Peace token awarded!", "success");
+  };
+
   return (
     <div
       style={{
@@ -83,11 +99,30 @@ export const SayItForMe: React.FC<SayItForMeProps> = ({ onToast, readAloudDefaul
         boxShadow: "var(--shadow-sm)"
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-        <span style={{ fontSize: "1.4rem" }}>💬</span>
-        <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "var(--ink)" }}>
-          Say It For Me
-        </h2>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: "1.4rem" }}>💬</span>
+          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "var(--ink)" }}>
+            Say It For Me
+          </h2>
+        </div>
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            background: "var(--spring-mint-100)",
+            padding: "4px 10px",
+            borderRadius: "var(--radius-pill)",
+            border: "1px solid var(--spring-mint-300)",
+            fontSize: "0.8rem",
+            fontWeight: 700,
+            color: "var(--spring-green-900)"
+          }}
+        >
+          <span>🏅</span>
+          <span>{peaceTokens} Peace Tokens</span>
+        </div>
       </div>
 
       <p style={{ margin: "0 0 16px 0", fontSize: "0.88rem", color: "var(--ink-secondary)" }}>
@@ -353,6 +388,27 @@ export const SayItForMe: React.FC<SayItForMeProps> = ({ onToast, readAloudDefaul
               >
                 📋 Copy
               </button>
+              <button
+                type="button"
+                id="say-complete-task-btn"
+                onClick={handleCompleteTask}
+                style={{
+                  padding: "5px 12px",
+                  borderRadius: "var(--radius-pill)",
+                  background: "var(--spring-green-700)",
+                  color: "#ffffff",
+                  border: "none",
+                  fontWeight: 700,
+                  fontSize: "0.82rem",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4
+                }}
+              >
+                <span>🎉</span>
+                <span>Sent / Done!</span>
+              </button>
             </div>
           </div>
           <div
@@ -360,11 +416,72 @@ export const SayItForMe: React.FC<SayItForMeProps> = ({ onToast, readAloudDefaul
               whiteSpace: "pre-wrap",
               fontSize: "0.95rem",
               lineHeight: 1.6,
-              color: "var(--ink)"
+              color: "var(--ink)",
+              marginBottom: rewardEarned ? 14 : 0
             }}
           >
             {draftResult}
           </div>
+
+          {rewardEarned && (
+            <div
+              style={{
+                marginTop: 14,
+                padding: "16px 18px",
+                borderRadius: "var(--radius-md)",
+                background: "linear-gradient(135deg, var(--spring-mint-100) 0%, var(--card) 100%)",
+                border: "2px solid var(--spring-green-700)",
+                textAlign: "center",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 8
+              }}
+            >
+              <div style={{ fontSize: "2rem", lineHeight: 1 }}>✨ 🕊️ 🌟 🏅 🌸</div>
+              <strong style={{ fontSize: "1.05rem", color: "var(--spring-green-900)" }}>
+                Communication Victory! +1 Peace Token Awarded
+              </strong>
+              <p style={{ margin: 0, fontSize: "0.88rem", color: "var(--ink)", maxWidth: 500, lineHeight: 1.5 }}>
+                You advocated for yourself with kindness and protected your personal energy. Stating what you need takes real courage, and you did it wonderfully!
+              </p>
+              <div style={{ display: "flex", gap: 10, marginTop: 6, flexWrap: "wrap", justifyContent: "center" }}>
+                <span
+                  style={{
+                    fontSize: "0.82rem",
+                    fontWeight: 700,
+                    color: "var(--spring-green-800)",
+                    background: "var(--spring-mint-200)",
+                    padding: "4px 12px",
+                    borderRadius: "var(--radius-pill)",
+                    border: "1px solid var(--spring-mint-300)"
+                  }}
+                >
+                  🏅 Total Peace Tokens: {peaceTokens}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRewardEarned(false);
+                    setDraftResult(null);
+                    setIntent("");
+                  }}
+                  style={{
+                    padding: "4px 12px",
+                    borderRadius: "var(--radius-pill)",
+                    background: "var(--spring-green-700)",
+                    color: "#ffffff",
+                    border: "none",
+                    fontSize: "0.82rem",
+                    fontWeight: 600,
+                    cursor: "pointer"
+                  }}
+                >
+                  Draft Another Message ✨
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

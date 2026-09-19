@@ -132,6 +132,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             <button
               type="button"
+              data-speech="Personalize"
               onClick={onOpenAssessment}
               style={{
                 padding: "7px 14px",
@@ -154,6 +155,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             <button
               type="button"
+              data-speech="Log Out"
               onClick={onLogout}
               style={{
                 padding: "7px 14px",
@@ -172,29 +174,37 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        {/* Quick Accessibility Toggles Bar */}
+        {/* Quick Accessibility & EHV Toggles Bar */}
         <div
           style={{
             paddingTop: 8,
             borderTop: "1px solid var(--line)",
             display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: 10
+            flexDirection: "column",
+            gap: 6
           }}
         >
-          <span
+          <div
             style={{
-              fontSize: "0.82rem",
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-              color: "var(--ink-secondary)"
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: 8
             }}
           >
-            Quick Sensory Filters:
-          </span>
+            <span
+              style={{
+                fontSize: "0.82rem",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+                color: "var(--ink-secondary)"
+              }}
+            >
+              EHV & Sensory Accessibility Controls:
+            </span>
+          </div>
           <AccessibilitySettingsBar settings={settings} onUpdate={onUpdateSettings} />
         </div>
       </div>
