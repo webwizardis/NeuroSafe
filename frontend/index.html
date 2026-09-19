@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NeuroSafe rough UI</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">NeuroSafe</p>
+      <h1>Support that follows your lead.</h1>
+      <p class="muted">A rough integration UI for testing the backend. Nothing is applied or sent without your action.</p>
+    </div>
+    <span id="api-status" class="status-pill">Backend: checking…</span>
+  </header>
+
+  <main class="grid">
+    <section class="card wide" id="profile">
+      <div class="section-heading">
+        <div><span class="step">01</span><h2>Profile</h2></div>
+        <span class="tag">Suggest → approve → save</span>
+      </div>
+      <label for="profile-input">Tell NeuroSafe what would help</label>
+      <textarea id="profile-input" placeholder="Example: Long paragraphs are hard for me. I prefer short steps."></textarea>
+      <div class="actions">
+        <button id="suggest-profile">Suggest settings</button>
+        <button id="approve-profile" class="secondary" disabled>Approve shown settings</button>
+      </div>
+      <div id="profile-result" class="result empty">Suggestions will appear here. They are not saved automatically.</div>
+    </section>
+
+    <section class="card">
+      <div class="section-heading"><div><span class="step">02</span><h2>Read for Me</h2></div></div>
+      <p class="muted">Upload an image for Google Vision OCR. The image is not stored by this UI.</p>
+      <input id="image-input" type="file" accept="image/*">
+      <button id="read-image">Read image</button>
+      <div id="read-result" class="result empty">No image processed.</div>
+    </section>
+
+    <section class="card">
+      <div class="section-heading"><div><span class="step">03</span><h2>Explain Simply</h2></div></div>
+      <textarea id="explain-input" placeholder="Paste text to explain…"></textarea>
+      <button id="explain-text">Explain</button>
+      <div id="explain-result" class="result empty">No explanation yet.</div>
+    </section>
+
+    <section class="card">
+      <div class="section-heading"><div><span class="step">04</span><h2>Say It for Me</h2></div></div>
+      <input id="say-intent" placeholder="What do you want to say?">
+      <input id="say-context" placeholder="Optional context">
+      <button id="say-message">Draft message</button>
+      <div id="say-result" class="result empty">Nothing has been drafted.</div>
+    </section>
+
+    <section class="card">
+      <div class="section-heading"><div><span class="step">05</span><h2>Calm Me</h2></div></div>
+      <p class="muted">A small grounding sequence, not medical advice.</p>
+      <button id="load-calm">Show grounding steps</button>
+      <ol id="calm-result" class="result empty"><li>Steps will appear here.</li></ol>
+    </section>
+
+    <section class="card wide">
+      <div class="section-heading"><div><span class="step">06</span><h2>Tasks</h2></div></div>
+      <input id="task-input" placeholder="Example: Prepare for tomorrow morning">
+      <button id="break-task">Break into steps</button>
+      <div id="task-result" class="result empty">No task breakdown yet.</div>
+    </section>
+
+    <section class="card wide">
+      <div class="section-heading"><div><span class="step">07</span><h2>Safe Journey</h2></div></div>
+      <div class="form-grid">
+        <input id="origin" placeholder="Starting point">
+        <input id="destination" placeholder="Destination">
+        <select id="mode"><option value="walking">Walking</option><option value="driving">Driving</option><option value="transit">Transit</option><option value="bicycling">Bicycling</option></select>
+        <select id="avoid"><option value="">No route preference</option><option value="highways">Avoid highways</option><option value="tolls">Avoid tolls</option><option value="ferries">Avoid ferries</option></select>
+      </div>
+      <div class="actions">
+        <button id="find-route">Find route</button>
+        <button id="find-alternative" class="secondary">Find alternative</button>
+      </div>
+      <div id="route-result" class="result empty">No route requested.</div>
+    </section>
+
+    <section class="card sos-card">
+      <div class="section-heading"><div><span class="step">08</span><h2>SOS</h2></div><span class="tag danger">Manual only</span></div>
+      <p class="muted">This button never appears active automatically. The backend also requires confirmation.</p>
+      <input id="sos-message" value="I need help.">
+      <input id="sos-contact" placeholder="Optional contact label">
+      <label class="confirm"><input id="sos-confirm" type="checkbox"> I explicitly want to send this SOS request</label>
+      <button id="send-sos" class="danger-button">Request SOS</button>
+      <div id="sos-result" class="result empty">No SOS request made.</div>
+    </section>
+  </main>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>

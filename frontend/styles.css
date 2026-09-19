@@ -1,0 +1,16 @@
+:root { --ink:#18322f; --muted:#60736f; --paper:#f5f7f2; --card:#fff; --line:#dfe8e1; --mint:#cdebdc; --green:#216b54; --danger:#a33d37; }
+* { box-sizing:border-box; }
+body { margin:0; color:var(--ink); background:var(--paper); font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif; }
+.topbar { max-width:1180px; margin:auto; padding:48px 24px 24px; display:flex; justify-content:space-between; gap:24px; align-items:flex-start; }
+h1,h2,p { margin-top:0; } h1 { font:600 clamp(2rem,5vw,4rem)/1.05 Georgia,serif; max-width:650px; margin-bottom:12px; } h2 { margin:0; font-size:1.25rem; }
+.eyebrow,.step { color:var(--green); font-weight:700; letter-spacing:.1em; text-transform:uppercase; font-size:.76rem; } .muted { color:var(--muted); }
+.status-pill,.tag { background:var(--mint); border-radius:999px; padding:6px 12px; font-size:.8rem; white-space:nowrap; } .tag.danger { background:#f4d9d5; color:var(--danger); }
+.grid { max-width:1180px; margin:auto; padding:0 24px 56px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:24px; box-shadow:0 8px 30px #18322f08; } .wide { grid-column:span 2; }
+.section-heading { display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:18px; } .section-heading>div { display:flex; align-items:center; gap:12px; }
+label { display:block; font-weight:600; margin-bottom:7px; } textarea,input,select { width:100%; border:1px solid #cbd9d0; border-radius:10px; padding:11px 12px; margin:0 0 12px; color:var(--ink); background:#fcfdfb; font:inherit; } textarea { min-height:100px; resize:vertical; }
+button { border:0; border-radius:10px; background:var(--green); color:#fff; cursor:pointer; padding:10px 15px; font-weight:700; } button:disabled { opacity:.45; cursor:not-allowed; } button.secondary { background:#e4f1e9; color:var(--green); } .danger-button { background:var(--danger); }
+.actions { display:flex; flex-wrap:wrap; gap:10px; margin:4px 0 14px; } .form-grid { display:grid; grid-template-columns:2fr 2fr 1fr 1.4fr; gap:10px; }
+.result { border-radius:10px; background:#f2f6f2; padding:13px; white-space:pre-wrap; min-height:48px; } .result.empty { color:var(--muted); font-style:italic; } .result ul,.result ol { margin:0; padding-left:22px; }
+.confirm { font-weight:400; display:flex; align-items:center; gap:8px; margin:5px 0 14px; } .confirm input { width:auto; margin:0; } #toast { position:fixed; right:20px; bottom:20px; background:var(--ink); color:#fff; padding:10px 14px; border-radius:9px; opacity:0; transition:opacity .2s; pointer-events:none; } #toast.show { opacity:1; }
+@media (max-width:760px) { .topbar { display:block; } .status-pill { display:inline-block; margin-top:10px; } .grid { grid-template-columns:1fr; } .wide { grid-column:span 1; } .form-grid { grid-template-columns:1fr; gap:0; } }
