@@ -1522,3 +1522,73 @@ body.low-stim .habit-progress-bar-fill {
   padding: 0 12px;
 }
 
+/* ====================================================
+   PROFILE PRESET COMMAND CHIPS
+   ==================================================== */
+.profile-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 10px 0 14px;
+}
+.profile-preset-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin-right: 4px;
+}
+.profile-preset-chip {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.profile-preset-chip:hover {
+  background: var(--mint-light);
+  border-color: var(--green);
+  color: var(--green);
+}
+.profile-preset-chip.selected {
+  background: var(--green);
+  color: #ffffff;
+  border-color: var(--green);
+}
+
+/* ====================================================
+   SOS CONTACT RADIO OPTIONS
+   ==================================================== */
+.sos-contacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 10px 0 14px;
+}
+.sos-contact-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 600;
+  background: #ffffff;
+  margin-bottom: 0;
+}
+.sos-contact-option:hover {
+  border-color: var(--green);
+  background: var(--mint-light);
+}
+.sos-contact-option input[type="radio"] {
+  width: auto;
+  margin: 0;
+  accent-color: var(--green);
+}
+

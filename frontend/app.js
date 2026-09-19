@@ -905,6 +905,26 @@ function settingsFromSuggestion(suggestion) {
   );
 }
 
+function initProfilePresets() {
+  document.querySelectorAll(".profile-preset-chip").forEach((chip) => {
+    chip.onclick = () => {
+      const command = chip.getAttribute("data-command") || "";
+      $("profile-input").value = command;
+      $("profile-input").focus();
+      document.querySelectorAll(".profile-preset-chip").forEach((c) => c.classList.remove("selected"));
+      chip.classList.add("selected");
+      action(async () => {
+        const data = await json("/api/profile/suggest", { user_input: command });
+        suggestedSettings = settingsFromSuggestion(data.suggestion);
+        const detail = data.suggestion.message || JSON.stringify(data.suggestion, null, 2);
+        show("profile-result", `${detail}\n\nSuggested settings: ${JSON.stringify(suggestedSettings, null, 2)}`);
+        $("approve-profile").disabled = Object.keys(suggestedSettings).length === 0 || data.suggestion.status !== "suggestion";
+        toast("Settings suggested from your selection.");
+      });
+    };
+  });
+}
+
 function initDashboardActions() {
   $("suggest-profile").onclick = () => action(async () => {
     const data = await json("/api/profile/suggest", { user_input: $("profile-input").value });
@@ -995,13 +1015,16 @@ function initDashboardActions() {
         toast("Safety check acknowledged. Sending SOS beacon…");
       }
 
+      const contactChoice = document.querySelector('input[name="sos-contact-choice"]:checked');
+      const contact = contactChoice ? contactChoice.value : "Sam (Partner)";
+
       show("sos-result", "Sending SOS urgent support beacon…");
       const data = await json("/api/sos", {
         message: $("sos-message").value || "I need help.",
-        contact: $("sos-contact").value || null,
+        contact: contact,
         confirmed: true
       });
-      show("sos-result", `🚨 SOS REQUEST CONFIRMED & SENT:\n\nTimestamp: ${data.timestamp}\nStatus: ${data.status}\nMessage: "${data.message}"\nContact: ${data.contact || "Default Emergency Support"}\n\nCalm assistance is on the way.`);
+      show("sos-result", `🚨 SOS REQUEST CONFIRMED & SENT:\n\nTimestamp: ${data.timestamp}\nStatus: ${data.status}\nMessage: "${data.message}"\nContact: ${data.contact || contact}\n\nCalm assistance is on the way.`);
       toast("🚨 SOS beacon sent successfully!");
     });
   }
@@ -1421,6 +1444,7 @@ async function initializeApp() {
   initQuickSpeak();
   initCamera();
   initDashboardActions();
+  initProfilePresets();
   initHabitsUI();
   checkBackend();
 

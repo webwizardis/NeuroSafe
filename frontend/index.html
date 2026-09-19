@@ -217,6 +217,17 @@
         </div>
         <label for="profile-input">Tell NeuroSafe what would help right now</label>
         <textarea id="profile-input" placeholder="Example: Long paragraphs are hard for me. I prefer short steps."></textarea>
+        <div class="profile-presets">
+          <span class="profile-preset-label">Quick commands:</span>
+          <button type="button" class="profile-preset-chip" data-command="Turn on low stimulation mode. Muted colors, no animations, calm interface.">🌿 Low stimulation mode</button>
+          <button type="button" class="profile-preset-chip" data-command="Turn on plain language mode. Simplify all text, short sentences, easy words.">📖 Plain language mode</button>
+          <button type="button" class="profile-preset-chip" data-command="Turn on step by step mode. Break everything into small numbered steps.">🪜 Step by step mode</button>
+          <button type="button" class="profile-preset-chip" data-command="Turn on read aloud mode. Speak all text out loud for me.">🔊 Read aloud mode</button>
+          <button type="button" class="profile-preset-chip" data-command="I am sensitive to bright screens and loud sounds. Keep everything calm, muted, and quiet.">🌿 Sensory sensitivity</button>
+          <button type="button" class="profile-preset-chip" data-command="I struggle with long paragraphs. Give me short, plain text and read it aloud.">📖 Reading fatigue</button>
+          <button type="button" class="profile-preset-chip" data-command="I get overwhelmed by big tasks. Break everything into tiny steps I can do one at a time.">🪜 Task overwhelm</button>
+          <button type="button" class="profile-preset-chip" data-command="I have trouble speaking in social situations. Help me draft calm, kind messages.">💬 Social anxiety</button>
+        </div>
         <div class="actions">
           <button id="suggest-profile">Suggest settings</button>
           <button id="approve-profile" class="secondary" disabled>Approve shown settings</button>
@@ -496,7 +507,20 @@
         </div>
         <p class="muted">This button never appears active automatically. The backend also requires explicit manual confirmation.</p>
         <input id="sos-message" value="I need help.">
-        <input id="sos-contact" placeholder="Optional contact label (e.g. Partner, Roommate, Support line)">
+        <div class="sos-contacts">
+          <label class="sos-contact-option">
+            <input type="radio" name="sos-contact-choice" value="Sam (Partner)" checked>
+            <span>Sam (Partner)</span>
+          </label>
+          <label class="sos-contact-option">
+            <input type="radio" name="sos-contact-choice" value="Dr. Lee (Therapist)">
+            <span>Dr. Lee (Therapist)</span>
+          </label>
+          <label class="sos-contact-option">
+            <input type="radio" name="sos-contact-choice" value="Crisis Line 988">
+            <span>Crisis Line 988</span>
+          </label>
+        </div>
         <label class="confirm">
           <input id="sos-confirm" type="checkbox">
           <span>I explicitly want to send this SOS request</span>
