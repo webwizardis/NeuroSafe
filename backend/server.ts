@@ -1904,8 +1904,6 @@ app.post("/api/route", async (req: Request, res: Response) => {
       const resp = await fetch(`https://maps.googleapis.com/maps/api/directions/json?${params.toString()}`);
       const data: any = await resp.json();
       if (data.status === "OK" && Array.isArray(data.routes)) {
-        // Enrich first route with prewritten commands
-        data.routes[0].prewritten_commands = MASTER_PREWRITTEN_COMMANDS.route;
         return res.json({ routes: data.routes, source: "google_maps" });
       }
     } catch (err) {
@@ -1917,7 +1915,6 @@ app.post("/api/route", async (req: Request, res: Response) => {
     routes: [
       {
         summary: `Standard ${mode} path from ${origin} to ${destination}`,
-        prewritten_commands: MASTER_PREWRITTEN_COMMANDS.route,
         legs: [
           {
             start_address: String(origin),
@@ -1934,7 +1931,6 @@ app.post("/api/route", async (req: Request, res: Response) => {
       },
     ],
     source: "safe_journey_planner",
-    prewritten_commands: MASTER_PREWRITTEN_COMMANDS.route,
   });
 });
 
@@ -1964,7 +1960,6 @@ app.post("/api/route/alternative", async (req: Request, res: Response) => {
       const resp = await fetch(`https://maps.googleapis.com/maps/api/directions/json?${params.toString()}`);
       const data: any = await resp.json();
       if (data.status === "OK" && Array.isArray(data.routes)) {
-        data.routes[0].prewritten_commands = MASTER_PREWRITTEN_COMMANDS.route;
         return res.json({ routes: data.routes, source: "google_maps" });
       }
     } catch (err) {
@@ -1977,7 +1972,6 @@ app.post("/api/route/alternative", async (req: Request, res: Response) => {
     routes: [
       {
         summary: `Alternative route (${preference})`,
-        prewritten_commands: MASTER_PREWRITTEN_COMMANDS.route,
         legs: [
           {
             start_address: String(origin),
@@ -1994,7 +1988,6 @@ app.post("/api/route/alternative", async (req: Request, res: Response) => {
       },
     ],
     source: "safe_journey_planner",
-    prewritten_commands: MASTER_PREWRITTEN_COMMANDS.route,
   });
 });
 

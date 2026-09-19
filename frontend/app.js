@@ -992,7 +992,56 @@ function initDashboardActions() {
     if (alternative && $("avoid").value) body.avoid = $("avoid").value;
     show("route-result", "Calculating sensory-safe path…");
     const data = await json(alternative ? "/api/route/alternative" : "/api/route", body);
-    show("route-result", JSON.stringify(data.routes, null, 2));
+    renderRouteResult(data);
+  }
+
+  function renderRouteResult(data) {
+    const el = $("route-result");
+    if (!data || !data.routes || !data.routes.length) {
+      el.classList.remove("empty");
+      el.innerHTML = "<p class=\"route-empty\">No routes found. Try different locations.</p>";
+      return;
+    }
+
+    const route = data.routes[0];
+    const legs = route.legs || [];
+    const source = data.source === "google_maps" ? "Google Maps" : "Safe Journey Planner";
+
+    let html = `<div class="route-source-badge">Source: ${escapeHtml(source)}</div>`;
+
+    if (route.summary) {
+      html += `<div class="route-summary">${escapeHtml(route.summary)}</div>`;
+    }
+
+    legs.forEach((leg) => {
+      const distance = leg.distance?.text || "";
+      const duration = leg.duration?.text || "";
+      html += `<div class="route-leg-meta">`;
+      html += `<span class="route-leg-addr">${escapeHtml(leg.start_address || "")} → ${escapeHtml(leg.end_address || "")}</span>`;
+      if (distance || duration) {
+        html += `<span class="route-leg-stats">${escapeHtml(distance)} · ${escapeHtml(duration)}</span>`;
+      }
+      html += `</div>`;
+
+      const steps = leg.steps || [];
+      if (steps.length > 0) {
+        html += `<ol class="route-steps">`;
+        steps.forEach((step, i) => {
+          const instructions = (step.html_instructions || step.instructions || "").replace(/<[^>]*>/g, "");
+          const stepDist = step.distance?.text || "";
+          html += `<li class="route-step">`;
+          html += `<span class="route-step-num">${i + 1}</span>`;
+          html += `<div class="route-step-body">`;
+          html += `<span class="route-step-text">${escapeHtml(instructions)}</span>`;
+          if (stepDist) html += `<span class="route-step-dist">${escapeHtml(stepDist)}</span>`;
+          html += `</div></li>`;
+        });
+        html += `</ol>`;
+      }
+    });
+
+    el.classList.remove("empty");
+    el.innerHTML = html;
   }
 
   $("find-route").onclick = () => action(() => findRoute(false));
