@@ -235,82 +235,60 @@
         <div id="profile-result" class="result empty">Suggestions will appear here. They are not saved automatically.</div>
       </section>
 
-      <!-- 02. Read for Me (OCR & Camera Vision) -->
+      <!-- 02. Read for Me (Sample Image Gallery & Vision) -->
       <section class="card tool-card" id="tool-read" data-tool="read">
         <div class="section-heading">
-          <div><span class="step">02</span><h2>Read for Me (OCR & Camera)</h2></div>
+          <div><span class="step">02</span><h2>Read for Me (Image Gallery)</h2></div>
           <div class="heading-controls">
             <button id="btn-tts-read" class="tts-button" title="Read OCR result aloud" style="display:none;">🔊 Listen</button>
-            <span class="tag">Vision OCR</span>
+            <span class="tag">Calm Vision</span>
           </div>
         </div>
-        <p class="muted">Point your camera at signs, letters, screens, or medical notices to extract text and simplify them instantly.</p>
+        <p class="muted">Choose a calm example image to practice reading text, understanding surroundings, and spotting sensory supports. No camera permission is needed.</p>
 
-        <!-- Mode Switcher: Live Camera vs File Upload -->
-        <div class="ocr-mode-switcher" role="tablist" aria-label="OCR input modes">
-          <button id="btn-mode-camera" class="ocr-mode-btn active" type="button" role="tab" aria-selected="true">📷 Live Camera Scanner</button>
-          <button id="btn-mode-upload" class="ocr-mode-btn" type="button" role="tab" aria-selected="false">📁 Upload Image File</button>
+        <div id="image-gallery" class="image-gallery" role="list" aria-label="Example images for text and surroundings">
+          <button class="gallery-card selected" type="button" role="listitem" data-image-src="assets/gallery/quiet-notice.svg" data-analysis="text">
+            <img src="assets/gallery/quiet-notice.svg" alt="Example notice reading: Quiet room available after 3 PM" loading="lazy">
+            <span class="gallery-card-title">Read a notice</span>
+            <span class="gallery-card-help">Text, times, and instructions</span>
+          </button>
+          <button class="gallery-card" type="button" role="listitem" data-image-src="assets/gallery/medication-label.svg" data-analysis="text">
+            <img src="assets/gallery/medication-label.svg" alt="Example medication label with dosage and warning text" loading="lazy">
+            <span class="gallery-card-title">Read a label</span>
+            <span class="gallery-card-help">Small print and safety warnings</span>
+          </button>
+          <button class="gallery-card" type="button" role="listitem" data-image-src="assets/gallery/quiet-room.svg" data-analysis="scene">
+            <img src="assets/gallery/quiet-room.svg" alt="Example quiet room with a clear path, soft light, and a calm corner" loading="lazy">
+            <span class="gallery-card-title">Understand a room</span>
+            <span class="gallery-card-help">Pathways, lighting, and calm spaces</span>
+          </button>
+          <button class="gallery-card" type="button" role="listitem" data-image-src="assets/gallery/busy-desk.svg" data-analysis="scene">
+            <img src="assets/gallery/busy-desk.svg" alt="Example busy desk showing visual clutter and organization cues" loading="lazy">
+            <span class="gallery-card-title">Check a workspace</span>
+            <span class="gallery-card-help">Clutter, focus points, and next steps</span>
+          </button>
         </div>
 
-        <!-- 1. Live Camera OCR Container -->
-        <div id="camera-ocr-container" class="camera-ocr-panel">
-          <div class="camera-viewport-wrapper">
-            <video id="camera-video" playsinline autoplay muted></video>
-            <canvas id="camera-canvas" style="display:none;"></canvas>
-            
-            <!-- Viewfinder reticle overlay -->
-            <div id="camera-reticle" class="camera-reticle">
-              <div class="reticle-corner top-left"></div>
-              <div class="reticle-corner top-right"></div>
-              <div class="reticle-corner bottom-left"></div>
-              <div class="reticle-corner bottom-right"></div>
-              <div class="reticle-hint">Align text or sign inside frame</div>
-            </div>
-
-            <!-- Frozen snapshot preview -->
-            <div id="camera-snapshot-preview" class="camera-snapshot-preview" style="display:none;">
-              <img id="snapshot-img" alt="Captured camera frame" />
-              <button id="btn-retake-photo" type="button" class="retake-btn">🔄 Retake Photo</button>
-            </div>
-          </div>
-
-          <!-- Live Camera Controls -->
-          <div class="camera-toolbar">
-            <div class="camera-primary-actions">
-              <button id="btn-camera-capture" type="button" class="btn-shutter">📸 Capture & Read Text (OCR)</button>
-              <button id="btn-camera-describe" type="button" class="secondary">👁️ Describe Scene</button>
-            </div>
-            <div class="camera-secondary-actions">
-              <button id="btn-camera-flip" type="button" class="camera-aux-btn" title="Switch front/back camera">🔄 Switch Camera</button>
-              <button id="btn-camera-toggle-power" type="button" class="camera-aux-btn" title="Pause or restart camera stream">⏹️ Pause Camera</button>
-              <!-- Mobile native camera file input fallback -->
-              <label for="mobile-direct-camera" class="camera-aux-btn mobile-camera-label" title="Use native phone camera">
-                📱 Phone Camera
-                <input id="mobile-direct-camera" type="file" accept="image/*" capture="environment" style="display:none;">
-              </label>
-            </div>
-          </div>
-          <div id="camera-status-msg" class="camera-status" style="display:none;"></div>
-        </div>
-
-        <!-- 2. File Upload Container -->
-        <div id="file-upload-container" class="file-upload-panel" style="display:none;">
-          <div class="drop-zone" id="ocr-drop-zone">
-            <span class="drop-icon">📄</span>
-            <p><strong>Drag and drop</strong> an image or document photo here, or browse files</p>
-            <input id="image-input" type="file" accept="image/*">
-          </div>
-          <div class="actions">
-            <button id="read-image" type="button">Read Uploaded Image (OCR)</button>
+        <div class="gallery-preview" aria-live="polite">
+          <img id="gallery-preview-image" src="assets/gallery/quiet-notice.svg" alt="Selected example: quiet room notice">
+          <div>
+            <strong id="gallery-selection-title">Read a notice</strong>
+            <p id="gallery-selection-help" class="muted">Choose an action below. You can change examples at any time.</p>
           </div>
         </div>
+
+        <div class="gallery-actions">
+          <button id="btn-gallery-read" type="button" class="btn-shutter">📖 Read selected text</button>
+          <button id="btn-gallery-describe" type="button" class="secondary">👁️ Describe surroundings</button>
+        </div>
+        <div id="camera-status-msg" class="camera-status" style="display:none;"></div>
 
         <!-- OCR Results Area -->
         <div class="ocr-output-header">
-          <span class="ocr-output-label">OCR Transcription & Plain Summary:</span>
+          <span class="ocr-output-label">Vision result & plain summary:</span>
           <button id="btn-copy-ocr" class="ocr-copy-btn" type="button" style="display:none;">📋 Copy</button>
         </div>
-        <div id="read-result" class="result empty">Point camera at text or upload a photo to transcribe.</div>
+        <div id="read-result" class="result empty">Choose an example image, then select Read or Describe.</div>
       </section>
 
       <!-- 03. Explain Simply -->
@@ -535,4 +513,3 @@
   <script src="app.js"></script>
 </body>
 </html>
-

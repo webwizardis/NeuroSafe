@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" role="img" aria-labelledby="title desc">
+  <title id="title">Quiet room example</title><desc id="desc">A softly lit room with a clear path and a calm corner.</desc>
+  <rect width="800" height="520" fill="#dfeee9"/><path d="M0 365h800v155H0z" fill="#c4d9d0"/><path d="M95 105h610v260H95z" fill="#edf7f3" stroke="#477565" stroke-width="6"/>
+  <rect x="135" y="150" width="150" height="140" rx="10" fill="#b8d9ca"/><path d="M175 210h70M210 175v90" stroke="#477565" stroke-width="9"/>
+  <rect x="545" y="180" width="90" height="185" fill="#d2b38a"/><circle cx="610" cy="270" r="7" fill="#6b4b24"/>
+  <path d="M350 365L425 245l70 120" fill="#f6fbf8" stroke="#76a690" stroke-width="5"/>
+  <circle cx="430" cy="135" r="34" fill="#f9e3a6"/><path d="M430 101v68M396 135h68" stroke="#8b7445" stroke-width="5"/>
+  <text x="120" y="445" font-family="Arial,sans-serif" font-size="25" fill="#23483a">clear path • soft light • calm corner</text>
+</svg>

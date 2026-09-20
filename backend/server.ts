@@ -10,7 +10,8 @@ import { GoogleGenAI } from "@google/genai";
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = Number.parseInt(process.env.PORT || "3000", 10);
+const VISION_MODEL = process.env.GEMINI_VISION_MODEL || "gemini-2.5-flash";
 
 // Multer setup for file/camera photo uploads up to 15MB
 const storage = multer.memoryStorage();
@@ -345,11 +346,12 @@ async function generateContentWithFallback(options: {
   const genAI = getGenAI();
   if (!genAI) return null;
 
-  // Ordered fallback models: preferred, flash-latest, flash-lite
+  // Keep the preferred model configurable, but use currently supported Gemini
+  // model aliases as fallbacks so image requests do not silently skip vision.
   const candidateModels = [
-    options.preferredModel || "gemini-3.8-flash",
+    options.preferredModel || VISION_MODEL,
     "gemini-flash-latest",
-    "gemini-3.1-flash-lite",
+    "gemini-2.0-flash",
   ].filter((v, i, a) => a.indexOf(v) === i);
 
   for (const model of candidateModels) {
@@ -668,7 +670,7 @@ function ruleBasedProfileSuggest(input: string): Record<string, any> {
 // ----------------------------------------------------
 async function completeText(systemPrompt: string, userText: string): Promise<string> {
   const aiText = await generateContentWithFallback({
-    preferredModel: "gemini-3.8-flash",
+    preferredModel: VISION_MODEL,
     contents: `${systemPrompt}\n\nUser Input:\n"""${userText}"""`,
   });
 
@@ -747,7 +749,7 @@ async function performHighAccuracyOcr(
 
   // 1. Try Gemini Multimodal Vision with fallback across models
   const ocrText = await generateContentWithFallback({
-    preferredModel: "gemini-3.8-flash",
+    preferredModel: VISION_MODEL,
     contents: [
       {
         role: "user",
@@ -896,7 +898,7 @@ app.get("/api/commands", (req: Request, res: Response) => {
       "POST /api/profile/suggest with your accessibility preferences",
       "GET /api/habits to view daily routine and progress",
       "POST /api/habits with a simple goal to track",
-      "POST /api/camera/capture with a photo or camera frame",
+      "POST /api/camera/capture with a gallery or uploaded image",
       "POST /api/read with an uploaded document or sign",
       "POST /api/explain with complex text",
       "POST /api/say with intent to draft a kind message",
@@ -942,7 +944,7 @@ app.post("/api/profile/suggest", async (req: Request, res: Response) => {
 
   try {
     const aiText = await generateContentWithFallback({
-      preferredModel: "gemini-3.8-flash",
+      preferredModel: VISION_MODEL,
       contents: `${PROFILE_SYSTEM_PROMPT}\n\nUser description:\n"""${userInput}"""\n\nReturn ONLY the JSON object conforming to the specification.`,
       config: {
         responseMimeType: "application/json",
@@ -1195,7 +1197,7 @@ Respond ONLY with a valid JSON object strictly matching this schema:
 
   let aiResult: any = null;
   const aiText = await generateContentWithFallback({
-    preferredModel: "gemini-3.8-flash",
+    preferredModel: VISION_MODEL,
     contents: prompt,
     config: { responseMimeType: "application/json" },
   });
@@ -1362,7 +1364,7 @@ app.get("/api/camera", (req: Request, res: Response) => {
     max_frame_size_bytes: 15 * 1024 * 1024,
     camera_permission: "camera",
     capabilities: [
-      "live_camera_ocr",
+      "sample_image_ocr",
       "sensory_scene_description",
       "wayfinding_sign_detection",
       "crowd_and_lighting_analysis",
@@ -1440,7 +1442,7 @@ app.post("/api/camera/describe", upload.single("image") as any, async (req: Requ
 
     let description = "A calm room with clear walkways and visible signs.";
     const aiDesc = await generateContentWithFallback({
-      preferredModel: "gemini-3.8-flash",
+      preferredModel: VISION_MODEL,
       contents: [
         {
           role: "user",
@@ -1511,7 +1513,7 @@ app.post("/api/camera/analyze", upload.single("image") as any, async (req: Reque
     };
 
     const aiAnalysis = await generateContentWithFallback({
-      preferredModel: "gemini-3.8-flash",
+      preferredModel: VISION_MODEL,
       contents: [
         {
           role: "user",
@@ -1817,7 +1819,7 @@ Return ONLY a valid JSON array of objects with the following keys:
   let suggestions: any[] = [];
   try {
     const rawAi = await generateContentWithFallback({
-      preferredModel: "gemini-3.8-flash",
+      preferredModel: VISION_MODEL,
       contents: prompt,
       config: { responseMimeType: "application/json" },
     });

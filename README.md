@@ -17,6 +17,9 @@ The project is strictly separated into dedicated `backend` and `frontend` folder
 │   ├── index.html            # Semantic HTML, Live camera viewfinder, habit tracker, onboarding
 │   ├── styles.css            # Sensory-friendly design system, camera reticle, accessible states
 │   └── app.js                # Camera stream manager, OCR processor, habit engine, TTS
+├── src/                      # Uploaded reusable UI components
+│   ├── RoutineManager.jsx    # Optional React routine manager component
+│   └── RoutineManager.css    # Routine manager component styles
 ├── server.ts                 # Root delegator to backend/server.ts
 ├── package.json              # Full-stack dependencies & build commands
 ├── tsconfig.json             # TypeScript configuration
@@ -27,11 +30,11 @@ The project is strictly separated into dedicated `backend` and `frontend` folder
 
 ## Features
 
-- **Read for Me (Camera OCR & Multimodal Vision)**:
-  - **Live Camera Scanner**: Real-time camera viewfinder with alignment reticle and instant frame capture.
+- **Read for Me (Image Gallery & Multimodal Vision)**:
+  - **Calm Sample Gallery**: Permission-free example images for reading text and understanding environments.
   - **Multimodal OCR**: Powered by Gemini Vision to extract text and generate plain-language summaries for cognitive ease.
   - **Describe Scene**: Surrounding environment analyzer identifying signs, physical layouts, and sensory triggers.
-  - **Dual Lens & Controls**: Switch front/back cameras, pause/resume video streams, or use phone native camera capture.
+  - **Optional Image Upload**: Add a local image when a gallery example is not the right fit.
   - **Listen & Copy**: Instant calm Text-to-Speech (TTS) readout and clipboard export.
 - **Personalized Accessibility Onboarding**: Interactive assessment that identifies specific cognitive and sensory challenges and customizes the entire app.
 - **Daily Habit & Routine**: Gentle, low-pressure daily habit tracker with completion progress, time-of-day filtering (Morning, Afternoon, Evening), streak tracking, and AI-powered routine recommendations via Gemini.
@@ -85,6 +88,20 @@ The project is strictly separated into dedicated `backend` and `frontend` folder
    ```
    The application runs on `http://localhost:3000`.
 
+### Render deployment
+
+Create a Render **Web Service** from this repository with:
+
+| Setting | Value |
+| :--- | :--- |
+| Environment | Node |
+| Build Command | `npm ci && npm run build` |
+| Start Command | `npm start` |
+| Health Check Path | `/health` |
+
+Render supplies the `PORT` environment variable automatically; the server binds
+to it and listens on `0.0.0.0`. Do not hard-code a different port in Render.
+
 ### Production Build
 
 To build and run in production:
@@ -100,6 +117,12 @@ npm start
 | Variable | Description |
 | :--- | :--- |
 | `GEMINI_API_KEY` | Google Gemini API key for AI assistant features |
+| `GEMINI_VISION_MODEL` | Optional Gemini model for OCR and camera vision (defaults to `gemini-2.5-flash`) |
 | `GOOGLE_VISION_API_KEY` | Vision OCR API key (optional fallback) |
 | `GOOGLE_MAPS_API_KEY` | Google Maps Directions API key for route routing |
 | `NEUROSAFE_API_KEY` | Optional API key to lock down endpoints |
+
+`GEMINI_API_KEY`, `GOOGLE_VISION_API_KEY`, and `GOOGLE_MAPS_API_KEY` are
+optional at startup. Add the ones needed for the corresponding AI, OCR, and
+route features. `NEUROSAFE_API_KEY` is optional; if set, clients must send it
+as `x-api-key` or as a Bearer token for protected API routes.
