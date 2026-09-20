@@ -1,0 +1,276 @@
+@import "../styles.css";
+
+:root {
+  /* Master Palette defined in frontend/styles.css */
+  --ink: #18322f;
+  --muted: #536965;
+  --paper: #f4f7f4;
+  --card: #ffffff;
+  --line: #d8e4dc;
+  --mint: #d7ede1;
+  --mint-light: #eef7f2;
+  --green: #216b54;
+  --green-hover: #195341;
+  --danger: #a33d37;
+  --accent: #1e5e49;
+  --shadow: 0 10px 30px rgba(24, 50, 47, 0.06);
+  --radius: 16px;
+  --inner-radius: 10px;
+  --font-display: Georgia, "Times New Roman", serif;
+  --font-body: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+
+  /* Harmonized semantic tokens */
+  --ink-secondary: var(--muted);
+  --paper-peach: var(--mint-light);
+  --card-alt: var(--mint-light);
+  --line-focus: var(--green);
+  --line-peach: var(--line);
+  --accent-peach: var(--green);
+  --accent-spring: var(--green);
+  --danger-bg: #fae4e1;
+
+  --radius-lg: var(--radius);
+  --radius-md: 12px;
+  --radius-sm: var(--inner-radius);
+  --radius-pill: 9999px;
+
+  --shadow-sm: 0 2px 8px rgba(24, 50, 47, 0.04);
+  --shadow-md: var(--shadow);
+  --shadow-peach: 0 6px 20px rgba(33, 107, 84, 0.08);
+
+  /* Spring and Mint palette matching styles.css */
+  --spring-green-900: var(--ink);
+  --spring-green-800: var(--green-hover);
+  --spring-green-700: var(--accent);
+  --spring-green-600: var(--green);
+  --spring-mint-100: var(--mint-light);
+  --spring-mint-200: var(--mint);
+  --spring-mint-300: #c3e5d3;
+
+  /* Peach subtle tones */
+  --peach-50: var(--paper);
+  --peach-100: var(--mint-light);
+  --peach-200: var(--mint);
+  --peach-300: #c3e5d3;
+  --peach-500: var(--green);
+  --peach-700: var(--green-hover);
+  --peach-900: var(--ink);
+
+  /* Dynamic visual brightness, contrast, and warmth tokens */
+  --app-brightness: 100%;
+  --app-contrast: 100%;
+  --app-sepia: 0%;
+  --app-hue: 0deg;
+}
+
+/* Brightness, contrast, and warmth filter applied directly to html element for universal viewport coverage */
+html {
+  filter: brightness(var(--app-brightness, 100%)) contrast(var(--app-contrast, 100%)) sepia(var(--app-sepia, 0%)) hue-rotate(var(--app-hue, 0deg));
+  transition: filter 0.15s ease-out;
+  min-height: 100vh;
+  background-color: var(--paper);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Blue-light warmth tint modes */
+html.warmth-amber, body.warmth-amber {
+  --app-sepia: 32% !important;
+  --app-hue: -12deg !important;
+}
+
+html.warmth-mint, body.warmth-mint {
+  --app-sepia: 18% !important;
+  --app-hue: 45deg !important;
+}
+
+/* Font scale modes */
+body.font-scale-large {
+  font-size: 18px !important;
+}
+body.font-scale-large p,
+body.font-scale-large span:not([data-icon]),
+body.font-scale-large button,
+body.font-scale-large input,
+body.font-scale-large textarea {
+  font-size: 1.08rem !important;
+}
+
+body.font-scale-xlarge {
+  font-size: 20px !important;
+}
+body.font-scale-xlarge p,
+body.font-scale-xlarge span:not([data-icon]),
+body.font-scale-xlarge button,
+body.font-scale-xlarge input,
+body.font-scale-xlarge textarea {
+  font-size: 1.22rem !important;
+}
+
+/* Reduced motion */
+body.reduced-motion * {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Low-Stimulation Interface Mode: Soft, muted, calm, minimal contrast fatigue */
+body.low-stimulation {
+  --ink: #22332e !important;
+  --muted: #5e6f6a !important;
+  --paper: #e6ede6 !important;
+  --card: #f2f7f2 !important;
+  --card-alt: #e8f0e8 !important;
+  --paper-peach: #e8f0e8 !important;
+  --line: #c6d6ca !important;
+  --mint: #cee0d4 !important;
+  --mint-light: #e5ede6 !important;
+  --green: #295746 !important;
+  --green-hover: #1f4235 !important;
+  --danger: #a33d37 !important;
+  --accent: #295746 !important;
+  --shadow: none !important;
+  --shadow-sm: none !important;
+  --shadow-md: none !important;
+  --shadow-peach: none !important;
+
+  --ink-secondary: #5e6f6a !important;
+  --line-peach: #c6d6ca !important;
+  --line-focus: #295746 !important;
+  --accent-peach: #295746 !important;
+  --accent-spring: #295746 !important;
+
+  --spring-green-900: #22332e !important;
+  --spring-green-800: #1f4235 !important;
+  --spring-green-700: #295746 !important;
+  --spring-green-600: #386b57 !important;
+  --spring-mint-100: #e5ede6 !important;
+  --spring-mint-200: #cee0d4 !important;
+  --spring-mint-300: #bcd5c3 !important;
+
+  --peach-50: #e6ede6 !important;
+  --peach-100: #e5ede6 !important;
+  --peach-200: #cee0d4 !important;
+  --peach-300: #bcd5c3 !important;
+  --peach-500: #295746 !important;
+  --peach-700: #1f4235 !important;
+  --peach-900: #22332e !important;
+
+  background-color: #e6ede6 !important;
+}
+
+body.low-stimulation * {
+  animation: none !important;
+  transition: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+/* Simplified / High-Legibility Text Mode - overrides inline styles */
+body.simplified-text {
+  font-size: 18px !important;
+  line-height: 1.85 !important;
+  letter-spacing: 0.025em !important;
+}
+
+body.simplified-text #root,
+body.simplified-text p,
+body.simplified-text span:not([data-icon]),
+body.simplified-text label,
+body.simplified-text input,
+body.simplified-text textarea,
+body.simplified-text select,
+body.simplified-text button,
+body.simplified-text li {
+  font-size: 1.1rem !important;
+  line-height: 1.85 !important;
+  letter-spacing: 0.025em !important;
+}
+
+body.simplified-text h1 {
+  font-size: 2.3rem !important;
+  line-height: 1.3 !important;
+}
+
+body.simplified-text h2 {
+  font-size: 1.65rem !important;
+  line-height: 1.35 !important;
+}
+
+body.simplified-text h3 {
+  font-size: 1.35rem !important;
+}
+
+body.simplified-text button {
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+  font-size: 0.96rem !important;
+}
+
+/* Step-by-Step Focus Mode indicator styling */
+body.step-by-step-mode .step-focus-highlight {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
+  background: var(--mint-light);
+}
+
+/* Screen Dimmer Backdrop */
+.sensory-dimmer-active {
+  position: relative;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+body {
+  color: var(--ink);
+  background-color: var(--paper);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Base Accessibility Focus Rings */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--line-focus);
+  outline-offset: 2px;
+}
+
+/* Responsive Container */
+.container {
+  width: 100%;
+  max-width: 1240px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+/* Custom Scrollbar for Calm Feel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--paper);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--spring-green-600);
+}

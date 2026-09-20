@@ -30,83 +30,6 @@ app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ extended: true, limit: "20mb" }));
 
 // ----------------------------------------------------
-// PREWRITTEN COMMANDS MASTER CATALOG
-// ----------------------------------------------------
-export const MASTER_PREWRITTEN_COMMANDS = {
-  profile: [
-    'Suggest settings: "I prefer short steps and plain language."',
-    'Suggest settings: "Bright colors and fast animations give me sensory overload."',
-    'Suggest settings: "Long paragraphs are difficult. Please read text aloud to me."',
-    'Suggest settings: "I struggle to start big projects. Break tasks into tiny chunks."',
-    'Suggest settings: "Complex menus confuse me. I need clear landmarks and navigation."',
-    'Approve settings: { "simplify_text": true, "step_by_step": true }',
-  ],
-  camera: [
-    'Camera OCR: "Scan page and extract text with clean structure"',
-    'Camera Describe: "Describe the room and identify quiet, low-stimulation areas"',
-    'Camera Analyze: "Check this space for bright lighting or sensory clutter"',
-    'Camera Wayfinding: "Read room signs, door numbers, and emergency exit signs"',
-    'Camera Snapshot: "Transcribe medication label and safety warnings"',
-  ],
-  ocr: [
-    'OCR Action: "Extract all visible text from document"',
-    'OCR Action: "Summarize extracted text in plain language"',
-    'OCR Action: "Convert form fields and instructions into step-by-step checklist"',
-    'OCR Action: "Read extracted text aloud"',
-  ],
-  explain: [
-    'Explain Command: "Explain this medical letter in simple, calm bullet points"',
-    'Explain Command: "Summarize this legal document in 3 easy sentences"',
-    'Explain Command: "Remove jargon and highlight what I actually need to do"',
-    'Explain Command: "Explain this without any technical terms"',
-  ],
-  say: [
-    'Say Command: "Draft a polite message declining an invitation due to fatigue"',
-    'Say Command: "Ask my manager for extra time to review instructions in writing"',
-    'Say Command: "Request a quiet seating area at a restaurant or event"',
-    'Say Command: "Explain to a friend that I need to step outside for fresh air"',
-  ],
-  calm: [
-    'Calm Command: "Show 5-4-3-2-1 sensory grounding sequence"',
-    'Calm Command: "Guide me through a 4-7-8 relaxing breath cycle"',
-    'Calm Command: "Box breathing: 4s inhale, 4s hold, 4s exhale, 4s pause"',
-    'Calm Command: "Grounding check: Feel feet on floor, unclench jaw, relax shoulders"',
-  ],
-  tasks: [
-    'Task Command: "Break down: Prepare for tomorrow morning"',
-    'Task Command: "Break down: Clean and organize my room"',
-    'Task Command: "Break down: Reply to an overwhelming email"',
-    'Task Command: "Break down: Schedule a doctor appointment"',
-  ],
-  route: [
-    'Route Command: "Find walking route avoiding busy intersections and heavy traffic"',
-    'Route Command: "Find transit route with fewer transfers and calmer stations"',
-    'Route Command: "Find quiet path avoiding highways and noisy roads"',
-    'Route Command: "Show route landmarks and pedestrian rest areas"',
-  ],
-  sos: [
-    'SOS Command: "Request immediate support with current location"',
-    'SOS Command: "Send pre-composed text to trusted emergency contact"',
-    'SOS Command: "Update status: I am now in a safe quiet location"',
-    'SOS Command: "Cancel SOS alert"',
-  ],
-  habits: [
-    'Habit Command: "Add habit: Morning hydration - Drink 1 glass of water"',
-    'Habit Command: "Add habit: Take daily medication or vitamins"',
-    'Habit Command: "Add habit: 5-minute sensory pause without screens"',
-    'Habit Command: "Add habit: Evening wind-down stretch"',
-    'Habit Command: "Suggest gentle neurodiversity-affirming daily routine"',
-  ],
-};
-
-// Formatter to append prewritten commands to text results for UI visibility
-function appendPrewrittenCommands(text: string, commands: string[]): string {
-  if (!commands || commands.length === 0) return text;
-  const commandLines = commands.map((c) => `• ${c}`).join("\n");
-  return `${text.trim()}\n\n─── Prewritten Commands ───\n${commandLines}`;
-}
-
-// ----------------------------------------------------
 // API KEY & AUTHENTICATION MIDDLEWARE
 // ----------------------------------------------------
 const CONFIGURED_API_KEY = process.env.NEUROSAFE_API_KEY || process.env.API_KEY || "";
@@ -162,11 +85,6 @@ function apiKeyAuthMiddleware(req: Request, res: Response, next: NextFunction): 
     detail: "Unauthorized. A valid NeuroSafe API key is required to access this endpoint.",
     error: "invalid_or_missing_api_key",
     help: "Pass your API key in the 'x-api-key' header, 'Authorization: Bearer <key>' header, or '?api_key=' query parameter.",
-    prewritten_commands: [
-      'curl -H "x-api-key: YOUR_API_KEY" http://localhost:3000/api/meta',
-      'curl -H "Authorization: Bearer YOUR_API_KEY" http://localhost:3000/api/calm',
-      'curl -X POST -H "x-api-key: YOUR_API_KEY" -H "Content-Type: application/json" -d \'{"task":"Plan morning"}\' http://localhost:3000/api/tasks/breakdown',
-    ],
   });
 }
 
@@ -346,12 +264,11 @@ async function generateContentWithFallback(options: {
   const genAI = getGenAI();
   if (!genAI) return null;
 
-  // Keep the preferred model configurable, but use currently supported Gemini
-  // model aliases as fallbacks so image requests do not silently skip vision.
+  // Ordered fallback models: preferred, flash-latest, flash-lite
   const candidateModels = [
     options.preferredModel || VISION_MODEL,
     "gemini-flash-latest",
-    "gemini-2.0-flash",
+    "gemini-3.1-flash-lite",
   ].filter((v, i, a) => a.indexOf(v) === i);
 
   for (const model of candidateModels) {
@@ -731,7 +648,7 @@ interface OcrResult {
   summary: string;
   word_count: number;
   source: string;
-  prewritten_commands: string[];
+  prewritten_commands?: string[];
 }
 
 async function performHighAccuracyOcr(
@@ -740,12 +657,6 @@ async function performHighAccuracyOcr(
   filename?: string
 ): Promise<OcrResult> {
   const base64Data = imageBuffer.toString("base64");
-  const defaultCommands = [
-    'Explain text simply: "Explain the main message from this document"',
-    'Break into tasks: "Create an action checklist from these instructions"',
-    'Draft reply: "Write a polite reply acknowledging receipt of this notice"',
-    'Read aloud: "Listen to the transcription with text-to-speech"',
-  ];
 
   // 1. Try Gemini Multimodal Vision with fallback across models
   const ocrText = await generateContentWithFallback({
@@ -773,7 +684,7 @@ async function performHighAccuracyOcr(
 
   if (ocrText) {
     const wordCount = ocrText.split(/\s+/).filter(Boolean).length;
-    const formattedDisplay = appendPrewrittenCommands(ocrText, defaultCommands);
+    const formattedDisplay = ocrText.trim();
 
     return {
       text: formattedDisplay,
@@ -782,7 +693,6 @@ async function performHighAccuracyOcr(
       summary: "Transcribed with Gemini Multimodal OCR.",
       word_count: wordCount,
       source: "gemini_multimodal_ocr",
-      prewritten_commands: defaultCommands,
     };
   }
 
@@ -814,7 +724,7 @@ async function performHighAccuracyOcr(
 
       if (annotation.trim()) {
         const wordCount = annotation.split(/\s+/).filter(Boolean).length;
-        const formattedDisplay = appendPrewrittenCommands(annotation.trim(), defaultCommands);
+        const formattedDisplay = annotation.trim();
         return {
           text: formattedDisplay,
           raw_text: annotation.trim(),
@@ -822,7 +732,6 @@ async function performHighAccuracyOcr(
           summary: "Extracted via Google Cloud Vision OCR.",
           word_count: wordCount,
           source: "google_vision",
-          prewritten_commands: defaultCommands,
         };
       }
     } catch (err) {
@@ -830,10 +739,10 @@ async function performHighAccuracyOcr(
     }
   }
 
-  // 3. Informative fallback with diagnostic details and prewritten commands
+  // 3. Informative fallback with diagnostic details
   const sizeKb = (imageBuffer.length / 1024).toFixed(1);
   const fallbackMessage = `Image received: ${filename || "camera_frame.jpg"} (${sizeKb} KB, ${mimeType}).\n\nOCR Processing Note:\nTo enable live optical character recognition with high-accuracy layout preservation, configure GEMINI_API_KEY or GOOGLE_VISION_API_KEY in your settings.`;
-  const formattedDisplay = appendPrewrittenCommands(fallbackMessage, defaultCommands);
+  const formattedDisplay = fallbackMessage.trim();
 
   return {
     text: formattedDisplay,
@@ -842,7 +751,6 @@ async function performHighAccuracyOcr(
     summary: "Image received and validated.",
     word_count: fallbackMessage.split(/\s+/).filter(Boolean).length,
     source: "local_image_processor",
-    prewritten_commands: defaultCommands,
   };
 }
 
@@ -856,11 +764,6 @@ app.get("/health", (req: Request, res: Response) => {
     status: "ok",
     timestamp: new Date().toISOString(),
     api_key_required: Boolean(CONFIGURED_API_KEY),
-    prewritten_commands: [
-      'curl http://localhost:3000/api/meta',
-      'curl http://localhost:3000/api/commands',
-      'curl http://localhost:3000/api/calm',
-    ],
   });
 });
 
@@ -882,30 +785,27 @@ app.get("/api/meta", (req: Request, res: Response) => {
       "task_breakdown",
       "low_stimulation_safe_journey_routing",
       "manual_sos_confirmation",
-      "prewritten_commands_library",
     ],
     api_key_required: Boolean(CONFIGURED_API_KEY),
-    prewritten_commands: MASTER_PREWRITTEN_COMMANDS,
   });
 });
 
-// Master Prewritten Commands Catalog
+// Commands Catalog
 app.get("/api/commands", (req: Request, res: Response) => {
   res.json({
-    description: "Ready-to-use accessibility commands, prompts, and actions across all NeuroSafe features.",
-    commands: MASTER_PREWRITTEN_COMMANDS,
-    prewritten_commands: [
-      "POST /api/profile/suggest with your accessibility preferences",
-      "GET /api/habits to view daily routine and progress",
-      "POST /api/habits with a simple goal to track",
-      "POST /api/camera/capture with a gallery or uploaded image",
-      "POST /api/read with an uploaded document or sign",
-      "POST /api/explain with complex text",
-      "POST /api/say with intent to draft a kind message",
-      "GET /api/calm for instant grounding sequence",
-      "POST /api/tasks/breakdown to split an overwhelming task",
-      "POST /api/route for calm, low-stimulation directions",
-      "POST /api/sos with explicit confirmation for urgent support",
+    description: "NeuroSafe API endpoints and capabilities.",
+    endpoints: [
+      "POST /api/profile/suggest",
+      "GET /api/habits",
+      "POST /api/habits",
+      "POST /api/camera/capture",
+      "POST /api/read",
+      "POST /api/explain",
+      "POST /api/say",
+      "GET /api/calm",
+      "POST /api/tasks/breakdown",
+      "POST /api/route",
+      "POST /api/sos",
     ],
   });
 });
@@ -924,10 +824,6 @@ app.get("/api/key/status", (req: Request, res: Response) => {
     instructions: CONFIGURED_API_KEY
       ? "Pass your key in 'x-api-key' header or 'Authorization: Bearer <key>'"
       : "API key protection is optional. Direct access enabled.",
-    prewritten_commands: [
-      'curl -H "x-api-key: YOUR_KEY" http://localhost:3000/api/commands',
-      'curl -H "x-api-key: YOUR_KEY" http://localhost:3000/api/calm',
-    ],
   });
 });
 
@@ -956,7 +852,6 @@ app.post("/api/profile/suggest", async (req: Request, res: Response) => {
         const parsed = JSON.parse(aiText);
         return res.json({
           suggestion: parsed,
-          prewritten_commands: MASTER_PREWRITTEN_COMMANDS.profile,
         });
       } catch {
         // Fall through to deterministic rule-based suggestion
@@ -966,13 +861,11 @@ app.post("/api/profile/suggest", async (req: Request, res: Response) => {
     const suggestion = ruleBasedProfileSuggest(userInput);
     return res.json({
       suggestion,
-      prewritten_commands: MASTER_PREWRITTEN_COMMANDS.profile,
     });
   } catch {
     const suggestion = ruleBasedProfileSuggest(userInput);
     return res.json({
       suggestion,
-      prewritten_commands: MASTER_PREWRITTEN_COMMANDS.profile,
     });
   }
 });
@@ -998,14 +891,7 @@ app.post("/api/profile/approve", (req: Request, res: Response) => {
   };
 
   _profiles.set(profileId, profile);
-  return res.status(201).json({
-    ...profile,
-    prewritten_commands: [
-      `View profile: GET /api/profile/${profileId}`,
-      'Explain with approved settings: POST /api/explain',
-      'Break tasks with approved settings: POST /api/tasks/breakdown',
-    ],
-  });
+  return res.status(201).json(profile);
 });
 
 // ----------------------------------------------------
@@ -1016,13 +902,7 @@ app.get("/api/profile/:profile_id", (req: Request, res: Response) => {
   if (!profile) {
     return res.status(404).json({ detail: `Profile '${req.params.profile_id}' not found.` });
   }
-  return res.json({
-    ...profile,
-    prewritten_commands: [
-      'Suggest updated preferences: POST /api/profile/suggest',
-      'Break down task: POST /api/tasks/breakdown',
-    ],
-  });
+  return res.json(profile);
 });
 
 // ----------------------------------------------------
@@ -1231,8 +1111,13 @@ Respond ONLY with a valid JSON object strictly matching this schema:
       pSet.has("wayfinding_anxiety") ||
       /navigat|route|transit|crowd|lost|street|direction|journey/.test(textLower);
 
-    const settings: Record<string, boolean> = {
+    const settings: Record<string, any> = {
       low_stimulation_interface: isSensory,
+      brightness: isSensory ? 85 : 100,
+      contrast: isSensory ? 90 : 100,
+      warmth: isSensory ? "amber" : "natural",
+      font_scale: isReading ? "large" : "standard",
+      reduced_motion: isSensory,
       simplify_text: isReading,
       step_by_step: isExecutive,
       read_aloud: isReading,
@@ -1264,6 +1149,15 @@ Respond ONLY with a valid JSON object strictly matching this schema:
       customization_summary: summary,
       primary_focus,
     };
+  }
+
+  if (aiResult?.settings) {
+    if (aiResult.settings.low_stimulation_interface && typeof aiResult.settings.brightness !== "number") {
+      aiResult.settings.brightness = 85;
+      aiResult.settings.contrast = 90;
+      aiResult.settings.warmth = "amber";
+      aiResult.settings.reduced_motion = true;
+    }
   }
 
   const profileId = crypto.randomUUID();
@@ -1303,7 +1197,6 @@ Respond ONLY with a valid JSON object strictly matching this schema:
     customization_summary: aiResult.customization_summary,
     primary_focus: aiResult.primary_focus || "general",
     profile: profileRecord,
-    prewritten_commands: MASTER_PREWRITTEN_COMMANDS.profile,
   });
 });
 
@@ -1364,12 +1257,11 @@ app.get("/api/camera", (req: Request, res: Response) => {
     max_frame_size_bytes: 15 * 1024 * 1024,
     camera_permission: "camera",
     capabilities: [
-      "sample_image_ocr",
+      "live_camera_ocr",
       "sensory_scene_description",
       "wayfinding_sign_detection",
       "crowd_and_lighting_analysis",
     ],
-    prewritten_commands: MASTER_PREWRITTEN_COMMANDS.camera,
   });
 });
 
@@ -1407,7 +1299,6 @@ app.post("/api/camera/capture", upload.single("image") as any, async (req: Reque
     return res.json({
       camera: "capture_success",
       ...ocrResult,
-      prewritten_commands: MASTER_PREWRITTEN_COMMANDS.camera,
     });
   } catch (err: any) {
     return res.status(500).json({ detail: `Camera OCR failed: ${err?.message || err}` });
@@ -1468,11 +1359,10 @@ app.post("/api/camera/describe", upload.single("image") as any, async (req: Requ
       description = aiDesc;
     }
 
-    const formatted = appendPrewrittenCommands(description, MASTER_PREWRITTEN_COMMANDS.camera);
+    const formatted = description.trim();
     return res.json({
       description: formatted,
       raw_description: description,
-      prewritten_commands: MASTER_PREWRITTEN_COMMANDS.camera,
     });
   } catch (err: any) {
     return res.status(500).json({ detail: `Camera describe error: ${err?.message || err}` });
@@ -1550,7 +1440,6 @@ Return a JSON object with:
 
     return res.json({
       sensory_analysis: analysisResult,
-      prewritten_commands: MASTER_PREWRITTEN_COMMANDS.camera,
     });
   } catch (err: any) {
     return res.status(500).json({ detail: `Camera analysis error: ${err?.message || err}` });
@@ -1572,36 +1461,102 @@ app.post("/api/explain", async (req: Request, res: Response) => {
     text
   );
 
-  const formattedText = appendPrewrittenCommands(simplified, MASTER_PREWRITTEN_COMMANDS.explain);
+  const formattedText = simplified.trim();
   return res.json({
     text: formattedText,
     raw_explanation: simplified,
     source: "gemini_plain_language",
-    prewritten_commands: MASTER_PREWRITTEN_COMMANDS.explain,
   });
 });
 
 // ----------------------------------------------------
 // 6. SAY IT FOR ME
 // ----------------------------------------------------
+function draftSituationalMessage(intent: string, context?: string, tone: string = "gentle_polite"): string {
+  const lower = intent.toLowerCase();
+  const ctx = context ? ` (${context})` : "";
+
+  if (lower.includes("decline") || lower.includes("fatigue") || lower.includes("tired") || lower.includes("social invite") || lower.includes("exhausted")) {
+    if (tone === "firm_clear") {
+      return `Thank you for the invitation${ctx}. I will not be able to attend today as I have reached my social limit and need to rest. I appreciate your understanding.`;
+    }
+    if (tone === "work_professional") {
+      return `Thank you for thinking of me${ctx}. Due to prior commitments and current bandwidth, I am unable to attend. I wish you all a successful gathering.`;
+    }
+    return `Thank you so much for inviting me${ctx}! I really appreciate you thinking of me, but my social battery is empty today and I need a restful evening at home. I hope you have a wonderful time, and let's connect when things are calmer.`;
+  }
+
+  if (lower.includes("writing") || lower.includes("written") || lower.includes("instructions") || lower.includes("manager")) {
+    if (tone === "firm_clear") {
+      return `To ensure all tasks are executed accurately, please email or message these instructions in writing before we begin. Thank you.`;
+    }
+    return `Hello${ctx ? " " + context : ""},\n\nThank you for discussing this. To help me process the details thoroughly and follow through with high accuracy, could you please send the main action items and steps to me in writing? It makes a huge difference for my workflow. Thank you!`;
+  }
+
+  if (lower.includes("quiet") || lower.includes("seating") || lower.includes("seat") || lower.includes("noise") || lower.includes("sound")) {
+    return `Hello,\n\nI have sensory sensitivity to loud noises and bright spaces. If possible, could we please be seated in a quieter, less crowded area? Thank you so much for your accommodation.`;
+  }
+
+  if (lower.includes("fresh air") || lower.includes("break") || lower.includes("outside") || lower.includes("10 minutes")) {
+    return `Excuse me${ctx ? " " + context : ""}, I am stepping outside for about 10 minutes to get some fresh air and regulate my senses. I will be right back. Thank you for your patience!`;
+  }
+
+  if (lower.includes("overwhelm") || lower.includes("sensory") || lower.includes("stimul")) {
+    return `Hello,\n\nI am experiencing sensory overwhelm right now. I need to step into a quiet environment to reset. Please communicate via text or message in the meantime. Thank you for understanding.`;
+  }
+
+  // Dynamic composition based on user intent
+  if (tone === "firm_clear") {
+    return `Hello${ctx ? " " + context : ""},\n\nRegarding ${intent.trim()}: I need to set a clear boundary on this matter. Thank you for respecting my space and decision.`;
+  }
+  if (tone === "work_professional") {
+    return `Hello${ctx ? " " + context : ""},\n\nI am writing regarding ${intent.trim()}. I appreciate your collaboration and look forward to coordinating this smoothly. Please let me know if you have any questions.\n\nBest regards.`;
+  }
+  return `Hello${ctx ? " " + context : ""},\n\nI wanted to share a gentle note regarding ${intent.trim()}. I appreciate your kindness and understanding as I navigate this. Thank you so much for your support!`;
+}
+
 app.post("/api/say", async (req: Request, res: Response) => {
   const intent = req.body?.intent;
   if (!intent || typeof intent !== "string" || !intent.trim()) {
     return res.status(400).json({ detail: "intent must not be blank" });
   }
 
-  const context = req.body?.context ? `\nContext: ${req.body.context}` : "";
-  const drafted = await completeText(
-    "Help the user compose a respectful, considerate message expressing their needs or thoughts. Do not send it. Return only the drafted message text.",
-    intent.trim() + context
-  );
+  const context = req.body?.context ? String(req.body.context).trim() : "";
+  const tone = req.body?.tone || "gentle_polite";
+  const cleanIntent = intent.trim();
 
-  const formattedText = appendPrewrittenCommands(drafted, MASTER_PREWRITTEN_COMMANDS.say);
+  let drafted: string | null = null;
+
+  try {
+    const aiText = await generateContentWithFallback({
+      preferredModel: VISION_MODEL,
+      contents: `You are NeuroSafe's Communication and Boundary Assistant.
+Help the user draft a polite, boundary-affirming message.
+User Intent: "${cleanIntent}"
+Optional Context/Recipient: "${context || "General"}"
+Desired Tone: "${tone}"
+
+CRITICAL RULES:
+- Write a complete, ready-to-send draft message.
+- Affirming, respectful, zero shame, protects user energy and boundaries.
+- Return ONLY the draft message text with no conversational preamble or quotes.`,
+    });
+
+    if (aiText && aiText.trim().length > 15) {
+      drafted = aiText.trim();
+    }
+  } catch (err) {
+    console.debug("AI message drafting fallback to situational engine:", err);
+  }
+
+  if (!drafted) {
+    drafted = draftSituationalMessage(cleanIntent, context, tone);
+  }
+
   return res.json({
-    text: formattedText,
+    text: drafted,
     raw_message: drafted,
-    source: "gemini_message_assistant",
-    prewritten_commands: MASTER_PREWRITTEN_COMMANDS.say,
+    source: "situational_message_assistant",
   });
 });
 
@@ -1619,7 +1574,6 @@ app.get("/api/calm", (req: Request, res: Response) => {
   res.json({
     steps,
     disclaimer: "This is a grounding sequence, not medical advice.",
-    prewritten_commands: MASTER_PREWRITTEN_COMMANDS.calm,
   });
 });
 
@@ -1654,7 +1608,6 @@ app.get("/api/habits", (req: Request, res: Response) => {
       all_completed: totalCount > 0 && completedCount === totalCount,
       today,
     },
-    prewritten_commands: MASTER_PREWRITTEN_COMMANDS.habits,
   });
 });
 
@@ -1855,30 +1808,224 @@ Return ONLY a valid JSON array of objects with the following keys:
 
   return res.json({
     suggestions,
-    prewritten_commands: MASTER_PREWRITTEN_COMMANDS.habits,
   });
 });
 
 // ----------------------------------------------------
-// 8. TASKS BREAKDOWN
+// 8. TASKS BREAKDOWN (Executive Function Decomposer)
 // ----------------------------------------------------
+function decomposeSituationalTask(task: string, energyLevel: string = "medium"): string {
+  const cleanTask = task.trim();
+  const lower = cleanTask.toLowerCase();
+
+  // 1. Kitchen & Food Situations
+  if (lower.includes("counter") || lower.includes("kitchen")) {
+    if (energyLevel === "low") {
+      return `1. Toss away any obvious food wrappers or scrap napkins into the trash can.
+2. Slide dirty glasses and bowls into the sink without washing them yet.
+3. Put away 2 food ingredients into the pantry or refrigerator.
+4. Wipe down just one small clear patch of the counter with a damp sponge.
+5. Take a deep, relaxed breath and leave the rest for later.`;
+    }
+    return `1. Toss empty wrappers, scraps, and trash directly into the garbage bin.
+2. Move dirty cups, bowls, and plates into the kitchen sink.
+3. Put away 2 to 3 food ingredients or pantry items in their designated spots.
+4. Spray or dampen a sponge and wipe the counter in a single smooth sweep from back to front.
+5. Dry the surface with a hand towel and enjoy the peaceful clear space.`;
+  }
+
+  if (lower.includes("dish") || lower.includes("sink") || lower.includes("dishwasher")) {
+    if (energyLevel === "low") {
+      return `1. Scrape leftover food into the trash from just 2 plates.
+2. Soak the dirtiest pan or bowl in warm soapy water so it loosens on its own.
+3. Wash just 3 cups or silverware items and place them on the drying rack.
+4. Rest your hands and leave the soaked items for later.`;
+    }
+    return `1. Scrape food scraps into the trash and group similar items together.
+2. Fill the sink basin with warm, soapy water.
+3. Wash light glassware and silverware first with a soapy sponge.
+4. Clean plates and bowls, rinsing each thoroughly with warm water.
+5. Place items in the drying rack to air dry without rushing.`;
+  }
+
+  if (lower.includes("cook") || lower.includes("dinner") || lower.includes("meal") || lower.includes("lunch") || lower.includes("breakfast") || lower.includes("eat")) {
+    return `1. Choose a comforting meal with 3 or fewer main ingredients.
+2. Place the required ingredients, cutting board, and pan on the counter.
+3. Prepare and heat the food on medium heat without rushing.
+4. Turn off all burners and appliances immediately when cooking finishes.
+5. Serve onto your favorite plate, pour a fresh drink, and sit down comfortably to eat.`;
+  }
+
+  if (lower.includes("grocer") || lower.includes("supermarket") || lower.includes("shop")) {
+    return `1. Open your fridge and pantry to write down 5 essential food items you need.
+2. Grab a reusable shopping bag, keys, and headphones for sensory comfort.
+3. Head to the store and walk directly to the aisles for your 5 listed items.
+4. Head to the self-checkout or shortest open register.
+5. Return home and put the cold refrigerated items away first.`;
+  }
+
+  // 2. Desk, Office & Academic Situations
+  if (lower.includes("desk") || lower.includes("workspace") || lower.includes("organize desk")) {
+    if (energyLevel === "low") {
+      return `1. Throw away any empty cups, snack wrappers, or scrap paper.
+2. Stack all loose papers into one single pile.
+3. Place pens in a cup or drawer.
+4. Enjoy having room for your hands and computer.`;
+    }
+    return `1. Toss empty cups, napkins, and snack wrappers into the wastebasket.
+2. Gather loose papers and notebooks into one neat stack on the corner.
+3. Place pens, markers, and loose cords into a desk tray or cup.
+4. Wipe down the desktop and keyboard with a microfiber cloth or disinfectant wipe.
+5. Set a fresh glass of water on your cleared desk.`;
+  }
+
+  if (lower.includes("study") || lower.includes("exam") || lower.includes("test") || lower.includes("quiz") || lower.includes("homework")) {
+    return `1. Pick the single specific chapter or topic you need to review today.
+2. Open your textbook or notes and set a gentle 15-minute timer.
+3. Skim the key headings, diagrams, and section summaries without pressure to memorize everything.
+4. Write down 3 key concepts or formulas in your own words on a flashcard.
+5. Close the notes when the timer rings and take a 5-minute movement or water break.`;
+  }
+
+  if (lower.includes("essay") || lower.includes("paper") || lower.includes("write") || lower.includes("report") || lower.includes("draft")) {
+    return `1. Open a new document and write your working title and today's date.
+2. Type 3 quick bullet points stating what your main argument or point is.
+3. Turn the first bullet point into two simple explanatory sentences.
+4. Paste in one reference, quotation, or data point beneath it.
+5. Save your document and step away for a mental breather—you have successfully started.`;
+  }
+
+  // 3. Digital & Communication Situations
+  if (lower.includes("email") || lower.includes("inbox") || lower.includes("reply") || lower.includes("message") || lower.includes("text")) {
+    return `1. Open the message and read only the final two sentences to identify the exact question.
+2. Open a separate blank notepad to draft your reply without the pressure of the email screen.
+3. Write 1 or 2 calm sentences stating your update or decision.
+4. Paste the text into the reply box and do a quick 5-second check.
+5. Click send immediately and close the application to protect your mental focus.`;
+  }
+
+  if (lower.includes("doctor") || lower.includes("dentist") || lower.includes("appointment") || lower.includes("schedule") || lower.includes("call")) {
+    return `1. Find the clinic or provider phone number and note your preferred days and times on paper.
+2. Have your calendar, insurance card, and ID resting on the table in front of you.
+3. Dial the number and take one slow, grounding breath while it rings.
+4. State your request: "Hello, I would like to schedule an appointment for [reason]."
+5. Write down the confirmed date and time in your calendar immediately and hang up.`;
+  }
+
+  // 4. Household, Laundry & Cleaning
+  if (lower.includes("laundry") || lower.includes("clothes") || lower.includes("wash clothes")) {
+    return `1. Collect dirty clothes from the floor and drop them into the laundry hamper.
+2. Carry the hamper to the washer and load the clothes inside.
+3. Add detergent and select a gentle cold wash cycle.
+4. Press start and set an alarm on your phone for when the cycle finishes.
+5. Transfer the clean clothes to the dryer or drying rack when the alarm sounds.`;
+  }
+
+  if (lower.includes("bedroom") || lower.includes("bed") || lower.includes("room")) {
+    return `1. Pull the sheet and blanket up to roughly smooth your bed.
+2. Pick up clothes from the floor and place them into the hamper or on a chair.
+3. Clear any dishes or trash off nightstands and window sills.
+4. Open the window or blinds for 2 minutes of natural light and fresh air.`;
+  }
+
+  if (lower.includes("bathroom")) {
+    return `1. Toss used towels into the hamper and clear bottles off the counter.
+2. Apply cleaner or soap to the sink basin and toilet bowl.
+3. Wipe down the counter and sink faucet with a damp cloth.
+4. Swish the toilet brush in the bowl and flush once.
+5. Wash your hands with warm water and enjoy the fresh space.`;
+  }
+
+  if (lower.includes("trash") || lower.includes("garbage") || lower.includes("recycle") || lower.includes("recycling")) {
+    return `1. Tie off the current full trash bag securely.
+2. Place a fresh new liner or bag into the bottom of the can immediately.
+3. Carry the full bag out to the main outdoor bin or chute.
+4. Return inside and wash your hands with warm soap and water.`;
+  }
+
+  // 5. Travel & Luggage
+  if (lower.includes("pack") || lower.includes("luggage") || lower.includes("suitcase") || lower.includes("trip") || lower.includes("flight")) {
+    return `1. Open your suitcase or backpack on your bed or clean floor.
+2. Lay out essentials: underwear, socks, and sleepwear for the number of days needed.
+3. Pick 2 to 3 versatile tops and comfortable bottoms that match easily.
+4. Place toothbrush, daily medications, and small toiletries into a zip pouch.
+5. Pack your phone charger and travel tickets, zip the bag, and place it near the door.`;
+  }
+
+  // 6. Administrative & Financial
+  if (lower.includes("tax") || lower.includes("bill") || lower.includes("paperwork") || lower.includes("receipt") || lower.includes("subscription")) {
+    return `1. Gather all related papers, mail, or digital receipts into a single folder.
+2. Open the portal or website and locate the specific form or payment page.
+3. Complete just the first section or pay the single most pressing item.
+4. Save your confirmation number or receipt in the folder.
+5. Close the tab and celebrate crossing off the financial friction.`;
+  }
+
+  // 7. Dynamic NLP extraction for arbitrary user inputs
+  const words = cleanTask.split(/\s+/).filter(w => w.length > 2);
+  const actionWord = words[0] || "start";
+  const targetObject = words.slice(1).join(" ") || "your task";
+
+  if (energyLevel === "low") {
+    return `1. Sit comfortably with a glass of water nearby and no pressure to rush.
+2. Bring ${targetObject} within easy arm's reach.
+3. Spend just 2 minutes on the very first sub-action to ${actionWord} the initial piece.
+4. Give yourself full permission to pause right here and celebrate initiating.`;
+  }
+
+  return `1. Clear a quiet space and set out the primary tools needed for ${targetObject}.
+2. Identify the single first physical step to ${actionWord} without looking at the whole list.
+3. Complete this first action at a calm, unhurried pace.
+4. Take a sip of water and check off this first milestone.
+5. Proceed to the next section or leave it safely in progress to resume anytime.`;
+}
+
 app.post("/api/tasks/breakdown", async (req: Request, res: Response) => {
   const task = req.body?.task || req.body?.input;
   if (!task || typeof task !== "string" || !task.trim()) {
     return res.status(400).json({ detail: "task must not be blank" });
   }
 
-  const result = await completeText(
-    "Break the task into clear, numbered, manageable small steps. Avoid overwhelming detail or artificial urgency. Keep each step actionable and calm.",
-    task.trim()
-  );
+  const energyLevel = req.body?.energyLevel || req.body?.energy || "medium";
+  const cleanTask = task.trim();
 
-  const formattedText = appendPrewrittenCommands(result, MASTER_PREWRITTEN_COMMANDS.tasks);
+  let result: string | null = null;
+
+  // Attempt AI generation with specialized prompt
+  try {
+    const aiText = await generateContentWithFallback({
+      preferredModel: VISION_MODEL,
+      contents: `You are NeuroSafe's Executive Function Task Breakdown specialist.
+Break down this specific task into concrete, manageable micro-actions tailored specifically to this situation:
+Task: "${cleanTask}"
+User Energy Level: "${energyLevel}"
+
+CRITICAL RULES:
+- Tailor the steps directly to the specific objects, tools, places, and actions needed for this exact task. Do NOT use generic steps like "Gather materials" or "Take a pause".
+- For low energy: Keep each step under 2 minutes, very low effort, permission to pause.
+- For medium energy: Calm, steady progression.
+- For high energy: Efficient, structured flow.
+- Format strictly as a numbered list (1., 2., 3., 4., 5.) with 4 to 6 concise, actionable steps.
+- Neurodiversity-affirming tone, no shame or urgency.`,
+    });
+
+    if (aiText && aiText.trim().length > 25 && /^[0-9]+[.)]/m.test(aiText)) {
+      result = aiText.trim();
+    }
+  } catch (err) {
+    console.debug("AI breakdown fallback to situational decomposer:", err);
+  }
+
+  // If AI generation not available or failed, use situational decomposition
+  if (!result) {
+    result = decomposeSituationalTask(cleanTask, energyLevel);
+  }
+
   return res.json({
-    text: formattedText,
+    text: result,
     raw_steps: result,
-    source: "gemini_task_breakdown",
-    prewritten_commands: MASTER_PREWRITTEN_COMMANDS.tasks,
+    energy_level: energyLevel,
+    source: "executive_situational_breakdown",
   });
 });
 
@@ -2003,7 +2150,6 @@ app.post("/api/sos", (req: Request, res: Response) => {
   if (!isConfirmed) {
     return res.status(409).json({
       detail: "SOS requires explicit confirmation.",
-      prewritten_commands: MASTER_PREWRITTEN_COMMANDS.sos,
     });
   }
 
@@ -2012,7 +2158,6 @@ app.post("/api/sos", (req: Request, res: Response) => {
     message: message || "I need help.",
     contact: contact || null,
     timestamp: new Date().toISOString(),
-    prewritten_commands: MASTER_PREWRITTEN_COMMANDS.sos,
   });
 });
 
@@ -2036,9 +2181,11 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 // ----------------------------------------------------
 // FRONTEND STATIC FILE SERVING & SPA FALLBACK
 // ----------------------------------------------------
-const frontendPath = fs.existsSync(path.join(process.cwd(), "frontend"))
-  ? path.join(process.cwd(), "frontend")
-  : path.resolve(__dirname, "../frontend");
+const distPath = path.join(process.cwd(), "frontend/dist");
+const legacyPath = path.join(process.cwd(), "frontend");
+const frontendPath = (fs.existsSync(distPath) && fs.existsSync(path.join(distPath, "index.html")))
+  ? distPath
+  : (fs.existsSync(legacyPath) ? legacyPath : path.resolve(__dirname, "../frontend"));
 app.use(express.static(frontendPath));
 
 app.get("*", (req: Request, res: Response) => {

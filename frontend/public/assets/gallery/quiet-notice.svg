@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" role="img" aria-labelledby="title desc">
+  <title id="title">Quiet room notice</title><desc id="desc">A simple accessible notice with large text.</desc>
+  <rect width="800" height="520" fill="#eaf4ef"/><rect x="110" y="45" width="580" height="430" rx="18" fill="#fff" stroke="#2d6a4f" stroke-width="8"/>
+  <text x="150" y="125" font-family="Arial,sans-serif" font-size="32" font-weight="700" fill="#173b2b">QUIET ROOM</text>
+  <path d="M150 155h500" stroke="#9bb9a7" stroke-width="4"/>
+  <text x="150" y="220" font-family="Arial,sans-serif" font-size="27" fill="#173b2b">Available after 3:00 PM</text>
+  <text x="150" y="275" font-family="Arial,sans-serif" font-size="24" fill="#355c49">Please keep voices low.</text>
+  <text x="150" y="330" font-family="Arial,sans-serif" font-size="24" fill="#355c49">Ask at the welcome desk.</text>
+  <circle cx="585" cy="385" r="45" fill="#cde8d7"/><path d="M560 385h50M585 360v50" stroke="#2d6a4f" stroke-width="8"/>
+</svg>

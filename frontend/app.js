@@ -8,6 +8,7 @@ let activeSettings = {
   read_aloud_enabled: true
 };
 let suggestedSettings = {};
+let cameraStream = null;
 
 const $ = (id) => document.getElementById(id);
 
@@ -74,6 +75,13 @@ function showView(viewName) {
 
   if (viewName === "app") {
     loadHabits();
+    // Warm up camera stream safely if on camera mode
+    const cameraContainer = $("camera-ocr-container");
+    if (cameraContainer && cameraContainer.style.display !== "none" && typeof startCameraStream === "function") {
+      startCameraStream();
+    }
+  } else {
+    if (typeof stopCameraStream === "function") stopCameraStream();
   }
 
   window.scrollTo({ top: 0, behavior: activeSettings.low_stimulation_interface ? "auto" : "smooth" });
@@ -533,6 +541,152 @@ function initTTSButtons() {
 }
 
 // ----------------------------------------------------
+// 5. CAMERA & SNAPSHOT OCR
+// ----------------------------------------------------
+// CAMERA OCR & VISION VIEWFINDER
+// ----------------------------------------------------
+let cameraFacingMode = "environment";
+let isCameraPaused = false;
+
+async function startCameraStream() {
+  const video = $("camera-video");
+  const statusMsg = $("camera-status-msg");
+  if (!video) return;
+
+  if (cameraStream) {
+    cameraStream.getTracks().forEach((track) => track.stop());
+    cameraStream = null;
+  }
+
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      if (statusMsg) {
+        statusMsg.style.display = "block";
+        statusMsg.textContent = "Camera stream unavailable in iframe/browser. Use 'Phone Camera' or 'Upload Image File'.";
+      }
+      return;
+    }
+
+    if (statusMsg) {
+      statusMsg.style.display = "block";
+      statusMsg.textContent = "Starting camera viewfinder…";
+    }
+
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: cameraFacingMode },
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      },
+      audio: false
+    });
+
+    video.srcObject = cameraStream;
+    await video.play();
+
+    isCameraPaused = false;
+    if ($("btn-camera-toggle-power")) $("btn-camera-toggle-power").textContent = "⏹️ Pause Camera";
+    if (statusMsg) {
+      statusMsg.textContent = "Camera active. Align text or signs inside frame.";
+      setTimeout(() => { if (statusMsg) statusMsg.style.display = "none"; }, 3000);
+    }
+  } catch (err) {
+    if (statusMsg) {
+      statusMsg.style.display = "block";
+      statusMsg.textContent = `Camera note: ${err.message}. You can still use 'Phone Camera' or file upload.`;
+    }
+  }
+}
+
+function stopCameraStream() {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach((track) => track.stop());
+    cameraStream = null;
+  }
+  isCameraPaused = true;
+  if ($("btn-camera-toggle-power")) $("btn-camera-toggle-power").textContent = "▶️ Start Camera";
+}
+
+async function captureVideoFrameBlob(callback, quality = 0.92) {
+  let video = $("camera-video");
+  const statusMsg = $("camera-status-msg");
+
+  // If camera isn't currently streaming frames, try to start it automatically
+  if (!cameraStream || !video || !video.videoWidth) {
+    if (statusMsg) {
+      statusMsg.style.display = "block";
+      statusMsg.textContent = "Connecting to camera viewfinder…";
+    }
+    try {
+      await startCameraStream();
+    } catch (err) {
+      console.warn("Could not start camera stream automatically:", err);
+    }
+
+    // Wait briefly for video dimensions to become available
+    let attempts = 0;
+    while ((!video || !video.videoWidth) && attempts < 12) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      video = $("camera-video");
+      attempts++;
+    }
+  }
+
+  // If live camera is streaming frames, capture from the video element
+  if (video && video.videoWidth > 0) {
+    const canvas = $("camera-canvas") || document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Show captured frame preview
+    const previewBox = $("camera-snapshot-preview");
+    const previewImg = $("snapshot-img");
+    const dataUrl = canvas.toDataURL("image/jpeg", quality);
+    if (previewBox && previewImg) {
+      previewImg.src = dataUrl;
+      previewBox.style.display = "flex";
+    }
+
+    canvas.toBlob((blob) => {
+      if (blob) {
+        callback(blob);
+      }
+    }, "image/jpeg", quality);
+    return;
+  }
+
+  // If direct stream is unavailable (e.g. iframe policy or device limitations),
+  // seamlessly trigger the device/phone camera capture without throwing an error
+  if (statusMsg) {
+    statusMsg.style.display = "block";
+    statusMsg.textContent = "Opening device camera/photo capture…";
+  }
+  toast("Opening photo capture…");
+
+  const picker = $("mobile-direct-camera") || $("image-input");
+  if (picker) {
+    const originalOnChange = picker.onchange;
+    picker.onchange = (e) => {
+      if (typeof originalOnChange === "function") originalOnChange(e);
+      const file = picker.files?.[0];
+      if (file) {
+        const previewBox = $("camera-snapshot-preview");
+        const previewImg = $("snapshot-img");
+        if (previewBox && previewImg) {
+          previewImg.src = URL.createObjectURL(file);
+          previewBox.style.display = "flex";
+        }
+        callback(file);
+      }
+    };
+    picker.click();
+  } else {
+    show("read-result", "Camera viewfinder not ready. Click 'Upload Image File' or 'Start Camera'.");
+  }
+}
+
 function formatOcrOutput(data) {
   if (!data) return "No text detected.";
   if (typeof data.text === "string" && data.text.trim()) {
@@ -545,112 +699,202 @@ function formatOcrOutput(data) {
   return JSON.stringify(data, null, 2);
 }
 
-  // ----------------------------------------------------
-  // 5b. CALM SAMPLE IMAGE GALLERY
-  // ----------------------------------------------------
-  function initImageGallery() {
-    const gallery = $("image-gallery");
-    const preview = $("gallery-preview-image");
-    const selectionTitle = $("gallery-selection-title");
-    const selectionHelp = $("gallery-selection-help");
-    const readButton = $("btn-gallery-read");
-    const describeButton = $("btn-gallery-describe");
-    const statusMsg = $("camera-status-msg");
-    if (!gallery || !preview || !readButton || !describeButton) return;
+function initCamera() {
+  const btnCapture = $("btn-camera-capture");
+  const btnDescribe = $("btn-camera-describe");
+  const btnFlip = $("btn-camera-flip");
+  const btnTogglePower = $("btn-camera-toggle-power");
+  const btnRetake = $("btn-retake-photo");
+  const mobileInput = $("mobile-direct-camera");
+  const btnModeCamera = $("btn-mode-camera");
+  const btnModeUpload = $("btn-mode-upload");
+  const cameraContainer = $("camera-ocr-container");
+  const uploadContainer = $("file-upload-container");
+  const btnCopy = $("btn-copy-ocr");
 
-    let selectedCard = gallery.querySelector(".gallery-card.selected") || gallery.querySelector(".gallery-card");
-    let selectedImageSrc = selectedCard?.dataset.imageSrc || "";
-    let selectedAnalysis = selectedCard?.dataset.analysis || "text";
-
-    const setStatus = (message, visible = true) => {
-      if (!statusMsg) return;
-      statusMsg.textContent = message;
-      statusMsg.style.display = visible ? "block" : "none";
+  // Mode Switcher: Live Camera vs Upload
+  if (btnModeCamera && btnModeUpload) {
+    btnModeCamera.onclick = () => {
+      btnModeCamera.classList.add("active");
+      btnModeUpload.classList.remove("active");
+      if (cameraContainer) cameraContainer.style.display = "block";
+      if (uploadContainer) uploadContainer.style.display = "none";
+      if (!cameraStream) startCameraStream();
     };
 
-    const selectCard = (card) => {
-      selectedCard?.classList.remove("selected");
-      selectedCard = card;
-      selectedCard.classList.add("selected");
-      selectedImageSrc = selectedCard.dataset.imageSrc || "";
-      selectedAnalysis = selectedCard.dataset.analysis || "text";
-      preview.src = selectedImageSrc;
-      preview.alt = selectedCard.querySelector("img")?.alt || "Selected example image";
-      if (selectionTitle) selectionTitle.textContent = selectedCard.querySelector(".gallery-card-title")?.textContent || "Selected example";
-      if (selectionHelp) selectionHelp.textContent = selectedAnalysis === "scene"
-        ? "This example focuses on pathways, lighting, clutter, and sensory comfort."
-        : "This example focuses on visible words, instructions, and plain-language meaning.";
-      setStatus("", false);
+    btnModeUpload.onclick = () => {
+      btnModeUpload.classList.add("active");
+      btnModeCamera.classList.remove("active");
+      if (cameraContainer) cameraContainer.style.display = "none";
+      if (uploadContainer) uploadContainer.style.display = "block";
     };
-
-    gallery.querySelectorAll(".gallery-card").forEach((card) => {
-      card.onclick = () => selectCard(card);
-    });
-
-    const analyzeSelectedImage = async (endpoint, filename, pendingMessage) => {
-      if (!selectedImageSrc) throw new Error("Choose an example image first.");
-      setStatus(pendingMessage);
-      show("read-result", pendingMessage);
-      const response = await fetch(selectedImageSrc);
-      if (!response.ok) throw new Error("The selected example image could not be loaded.");
-      const sourceBlob = await response.blob();
-      const sourceUrl = URL.createObjectURL(sourceBlob);
-      const image = new Image();
-      image.decoding = "async";
-      image.src = sourceUrl;
-      await image.decode();
-      URL.revokeObjectURL(sourceUrl);
-      const canvas = document.createElement("canvas");
-      canvas.width = 1200;
-      canvas.height = 780;
-      const context = canvas.getContext("2d");
-      if (!context) throw new Error("The selected example image could not be prepared.");
-      context.drawImage(image, 0, 0, canvas.width, canvas.height);
-      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.94));
-      if (!blob) throw new Error("The selected example image could not be encoded.");
-      const form = new FormData();
-      form.append("image", blob, filename.replace(/\.svg$/i, ".jpg"));
-      const data = await request(endpoint, { method: "POST", body: form });
-      return data;
-    };
-
-    readButton.onclick = () => action(async () => {
-      const data = await analyzeSelectedImage("/api/camera/capture", "gallery-example.svg", "Reading the selected example with Gemini Vision…");
-      show("read-result", formatOcrOutput(data));
-      if ($("btn-tts-read")) $("btn-tts-read").style.display = "inline-flex";
-      if ($("btn-copy-ocr")) $("btn-copy-ocr").style.display = "inline-flex";
-      setStatus("Finished. Choose another example whenever you are ready.", true);
-    });
-
-    describeButton.onclick = () => action(async () => {
-      const data = await analyzeSelectedImage("/api/camera/describe", "gallery-surroundings.svg", "Describing the selected surroundings with Gemini Vision…");
-      const description = data.description || data.text || JSON.stringify(data, null, 2);
-      show("read-result", `👁️ SURROUNDINGS DESCRIPTION:\n\n${description}`);
-      if ($("btn-tts-read")) $("btn-tts-read").style.display = "inline-flex";
-      if ($("btn-copy-ocr")) $("btn-copy-ocr").style.display = "inline-flex";
-      setStatus("Finished. Choose another example whenever you are ready.", true);
-    });
-
-    const copyButton = $("btn-copy-ocr");
-    if (copyButton) {
-      copyButton.onclick = async () => {
-        const text = $("read-result").textContent;
-        if (!text || $("read-result").classList.contains("empty")) {
-          toast("No result to copy");
-          return;
-        }
-        try {
-          await navigator.clipboard.writeText(text);
-          toast("Copied vision result to clipboard! 📋");
-        } catch {
-          toast("Unable to copy to clipboard.");
-        }
-      };
-    }
-
-    selectCard(selectedCard);
   }
 
+  // Retake photo: dismiss snapshot preview and re-engage live stream
+  if (btnRetake) {
+    btnRetake.onclick = () => {
+      const previewBox = $("camera-snapshot-preview");
+      if (previewBox) previewBox.style.display = "none";
+      if (!cameraStream) startCameraStream();
+    };
+  }
+
+  // Camera Flip (environment <-> user)
+  if (btnFlip) {
+    btnFlip.onclick = () => {
+      cameraFacingMode = cameraFacingMode === "environment" ? "user" : "environment";
+      startCameraStream();
+      toast(`Switched camera to ${cameraFacingMode === "environment" ? "Back" : "Front"}`);
+    };
+  }
+
+  // Pause / Resume camera stream
+  if (btnTogglePower) {
+    btnTogglePower.onclick = () => {
+      if (cameraStream && !isCameraPaused) {
+        stopCameraStream();
+        toast("Camera paused");
+      } else {
+        startCameraStream();
+        toast("Camera resumed");
+      }
+    };
+  }
+
+  // Shutter: Capture & Read Text (OCR)
+  if (btnCapture) {
+    btnCapture.onclick = () => action(async () => {
+      await captureVideoFrameBlob(async (blob) => {
+        if (!blob) {
+          toast("No image frame selected.");
+          return;
+        }
+
+        show("read-result", "Transcribing camera capture with Gemini OCR…");
+        const form = new FormData();
+        form.append("image", blob, "camera_capture.jpg");
+
+        try {
+          const data = await request("/api/camera/capture", {
+            method: "POST",
+            body: form
+          });
+
+          const formattedResult = formatOcrOutput(data);
+          show("read-result", formattedResult);
+          if ($("btn-tts-read")) $("btn-tts-read").style.display = "inline-flex";
+          if (btnCopy) btnCopy.style.display = "inline-flex";
+          toast("Camera OCR transcribed successfully!");
+        } catch (err) {
+          // Fallback to /api/read
+          try {
+            const data = await request("/api/read", { method: "POST", body: form });
+            show("read-result", formatOcrOutput(data));
+            if ($("btn-tts-read")) $("btn-tts-read").style.display = "inline-flex";
+            if (btnCopy) btnCopy.style.display = "inline-flex";
+          } catch (innerErr) {
+            show("read-result", `OCR Transcription Note: ${innerErr.message || "Please retry with a clear photo."}`);
+          }
+        }
+      });
+    });
+  }
+
+  // Describe Scene
+  if (btnDescribe) {
+    btnDescribe.onclick = () => action(async () => {
+      await captureVideoFrameBlob(async (blob) => {
+        if (!blob) {
+          toast("No image frame selected.");
+          return;
+        }
+
+        show("read-result", "Analyzing surroundings & sensory safety with Gemini…");
+        const form = new FormData();
+        form.append("image", blob, "scene_frame.jpg");
+
+        try {
+          const data = await request("/api/camera/describe", {
+            method: "POST",
+            body: form
+          });
+
+          const desc = data.description || data.text || JSON.stringify(data, null, 2);
+          show("read-result", `👁️ SCENE & SURROUNDINGS DESCRIPTION:\n\n${desc}`);
+          if ($("btn-tts-read")) $("btn-tts-read").style.display = "inline-flex";
+          if (btnCopy) btnCopy.style.display = "inline-flex";
+        } catch (err) {
+          show("read-result", `Scene analysis note: ${err.message || "Could not analyze frame."}`);
+        }
+      });
+    });
+  }
+
+  // Mobile native camera file input
+  if (mobileInput) {
+    mobileInput.onchange = async () => {
+      const file = mobileInput.files[0];
+      if (!file) return;
+
+      show("read-result", "Transcribing photo from phone camera with Gemini OCR…");
+      const form = new FormData();
+      form.append("image", file);
+
+      try {
+        const data = await request("/api/camera/capture", {
+          method: "POST",
+          body: form
+        });
+        show("read-result", formatOcrOutput(data));
+        if ($("btn-tts-read")) $("btn-tts-read").style.display = "inline-flex";
+        if (btnCopy) btnCopy.style.display = "inline-flex";
+        toast("Photo transcribed!");
+      } catch (err) {
+        toast(`OCR error: ${err.message}`);
+      }
+    };
+  }
+
+  // Copy button
+  if (btnCopy) {
+    btnCopy.onclick = async () => {
+      const text = $("read-result").textContent;
+      if (!text || $("read-result").classList.contains("empty")) {
+        toast("No text to copy");
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(text);
+        toast("Copied OCR text to clipboard! 📋");
+      } catch {
+        toast("Unable to copy to clipboard.");
+      }
+    };
+  }
+
+  // Drag and drop for upload zone
+  const dropZone = $("ocr-drop-zone");
+  const fileInput = $("image-input");
+  if (dropZone && fileInput) {
+    dropZone.ondragover = (e) => {
+      e.preventDefault();
+      dropZone.classList.add("dragover");
+    };
+    dropZone.ondragleave = () => {
+      dropZone.classList.remove("dragover");
+    };
+    dropZone.ondrop = (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("dragover");
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        fileInput.files = e.dataTransfer.files;
+        toast(`Selected file: ${e.dataTransfer.files[0].name}`);
+      }
+    };
+  }
+}
+
+// ----------------------------------------------------
 // 6. CORE ACCESSIBILITY FEATURES
 // ----------------------------------------------------
 function settingsFromSuggestion(suggestion) {
@@ -695,6 +939,22 @@ function initDashboardActions() {
     show("profile-result", `Saved profile ${data.profile_id}\n${JSON.stringify(data.settings, null, 2)}`);
     $("approve-profile").disabled = true;
     applyCustomization(data.settings, "Updated with newly approved profile settings.");
+  });
+
+  $("read-image").onclick = () => action(async () => {
+    const file = $("image-input").files[0];
+    if (!file) {
+      $("image-input").click();
+      toast("Please select an image file to transcribe");
+      return;
+    }
+    const form = new FormData();
+    form.append("image", file);
+    show("read-result", "Processing image with Gemini Multimodal OCR…");
+    const data = await request("/api/read", { method: "POST", body: form });
+    show("read-result", formatOcrOutput(data));
+    if ($("btn-tts-read")) $("btn-tts-read").style.display = "inline-flex";
+    if ($("btn-copy-ocr")) $("btn-copy-ocr").style.display = "inline-flex";
   });
 
   $("explain-text").onclick = () => action(async () => {
@@ -1231,7 +1491,7 @@ async function initializeApp() {
   initTogglePills();
   initTTSButtons();
   initQuickSpeak();
-  initImageGallery();
+  initCamera();
   initDashboardActions();
   initProfilePresets();
   initHabitsUI();
@@ -1267,3 +1527,4 @@ async function initializeApp() {
 }
 
 initializeApp();
+

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" role="img" aria-labelledby="title desc">
+  <title id="title">Medication label example</title><desc id="desc">An example label with dosage and warning text.</desc>
+  <rect width="800" height="520" fill="#f3f0e9"/><rect x="115" y="50" width="570" height="420" rx="18" fill="#fff" stroke="#7a6241" stroke-width="7"/>
+  <text x="155" y="115" font-family="Arial,sans-serif" font-size="31" font-weight="700" fill="#352b20">EXAMPLE LABEL</text>
+  <text x="155" y="175" font-family="Arial,sans-serif" font-size="27" fill="#352b20">Take 1 tablet with water</text>
+  <text x="155" y="220" font-family="Arial,sans-serif" font-size="25" fill="#352b20">once each morning.</text>
+  <path d="M155 250h490" stroke="#c5b79e" stroke-width="4"/>
+  <text x="155" y="305" font-family="Arial,sans-serif" font-size="23" fill="#6b4b24">Warning: example only.</text>
+  <text x="155" y="345" font-family="Arial,sans-serif" font-size="21" fill="#6b4b24">Follow your clinician's instructions.</text>
+  <rect x="155" y="380" width="170" height="42" rx="8" fill="#f6d7a7"/><text x="175" y="409" font-family="Arial,sans-serif" font-size="19" fill="#5b3a14">CHECK DETAILS</text>
+</svg>
