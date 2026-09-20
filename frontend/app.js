@@ -432,22 +432,22 @@ function prioritizeToolCards(problems) {
 function initTogglePills() {
   $("toggle-low-stim").onclick = () => {
     activeSettings.low_stimulation_interface = !activeSettings.low_stimulation_interface;
-    applyCustomization(activeSettings, "Updated sensory interface settings.");
+    applyCustomization(activeSettings, "Updated sensory interface settings.", currentUser?.problem_history || []);
   };
 
   $("toggle-simplify").onclick = () => {
     activeSettings.plain_language_mode = !activeSettings.plain_language_mode;
-    applyCustomization(activeSettings, "Updated plain language settings.");
+    applyCustomization(activeSettings, "Updated plain language settings.", currentUser?.problem_history || []);
   };
 
   $("toggle-step-by-step").onclick = () => {
     activeSettings.step_by_step_tasks = !activeSettings.step_by_step_tasks;
-    applyCustomization(activeSettings, "Updated task pacing settings.");
+    applyCustomization(activeSettings, "Updated task pacing settings.", currentUser?.problem_history || []);
   };
 
-  $("toggle-read-aloud").onclick = () => {
+   $("toggle-read-aloud").onclick = () => {
     activeSettings.read_aloud_enabled = !activeSettings.read_aloud_enabled;
-    applyCustomization(activeSettings, "Updated audio read-aloud settings.");
+    applyCustomization(activeSettings, "Updated audio read-aloud settings.", currentUser?.problem_history || []);
   };
 }
 
@@ -669,7 +669,7 @@ async function captureVideoFrameBlob(callback, quality = 0.92) {
   if (picker) {
     const originalOnChange = picker.onchange;
     picker.onchange = (e) => {
-      if (typeof originalOnChange === "function") originalOnChange(e);
+      picker.onchange = originalOnChange; // restore before running, so this never nests
       const file = picker.files?.[0];
       if (file) {
         const previewBox = $("camera-snapshot-preview");
@@ -685,6 +685,7 @@ async function captureVideoFrameBlob(callback, quality = 0.92) {
   } else {
     show("read-result", "Camera viewfinder not ready. Click 'Upload Image File' or 'Start Camera'.");
   }
+}
 }
 
 function formatOcrOutput(data) {
@@ -722,11 +723,12 @@ function initCamera() {
       if (!cameraStream) startCameraStream();
     };
 
-    btnModeUpload.onclick = () => {
+      btnModeUpload.onclick = () => {
       btnModeUpload.classList.add("active");
       btnModeCamera.classList.remove("active");
       if (cameraContainer) cameraContainer.style.display = "none";
       if (uploadContainer) uploadContainer.style.display = "block";
+      stopCameraStream();
     };
   }
 
@@ -938,7 +940,7 @@ function initDashboardActions() {
     const data = await json("/api/profile/approve", { approved_settings: suggestedSettings });
     show("profile-result", `Saved profile ${data.profile_id}\n${JSON.stringify(data.settings, null, 2)}`);
     $("approve-profile").disabled = true;
-    applyCustomization(data.settings, "Updated with newly approved profile settings.");
+    applyCustomization(data.settings, "Updated with newly approved profile settings.", currentUser?.problem_history || []);
   });
 
   $("read-image").onclick = () => action(async () => {
