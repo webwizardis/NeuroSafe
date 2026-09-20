@@ -164,7 +164,8 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ onToast, problems = []
     <div
       style={{
         background: "var(--card)",
-        border: "1px solid var(--line)",
+        border: "1px solid #ddd6fe",
+        borderTop: "4px solid #8b5cf6",
         borderRadius: "var(--radius-lg)",
         padding: "24px",
         boxShadow: "var(--shadow-sm)"
@@ -183,7 +184,7 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ onToast, problems = []
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: "1.4rem" }}>✨</span>
-          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "var(--ink)" }}>
+          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "#6d28d9" }}>
             Daily Habits & Calm Anchors
           </h2>
         </div>

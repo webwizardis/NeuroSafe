@@ -92,12 +92,29 @@ export interface SosResponse {
   [key: string]: any;
 }
 
-export interface OcrResponse {
-  text?: string;
-  plain_summary?: string;
-  description?: string;
-  confidence?: number;
-  [key: string]: any;
+export interface BuiltInImage {
+  id: string;
+  title: string;
+  category: "text_overwhelm" | "screen_fatigue" | "executive_adhd" | "grounding" | "aac_card" | "routine" | "regulation";
+  badge: string;
+  icon: string;
+  description: string;
+  plain_summary: string;
+  sensory_prompt: string;
+  spoken_text: string;
+  palette: {
+    bg: string;
+    fg: string;
+    accent: string;
+  };
+  svg: string;
+  tags: string[];
+}
+
+export interface BuiltInImagesResponse {
+  total: number;
+  categories: string[];
+  images: BuiltInImage[];
 }
 
 export interface ProfileSuggestion {

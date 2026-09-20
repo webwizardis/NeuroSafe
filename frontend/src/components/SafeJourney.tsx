@@ -63,7 +63,8 @@ export const SafeJourney: React.FC<SafeJourneyProps> = ({ onToast, readAloudDefa
     <div
       style={{
         background: "var(--card)",
-        border: "1px solid var(--line)",
+        border: "1px solid #bae6fd",
+        borderTop: "4px solid #0284c7",
         borderRadius: "var(--radius-lg)",
         padding: "24px",
         boxShadow: "var(--shadow-sm)"
@@ -71,7 +72,7 @@ export const SafeJourney: React.FC<SafeJourneyProps> = ({ onToast, readAloudDefa
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
         <span style={{ fontSize: "1.4rem" }}>🗺️</span>
-        <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "var(--ink)" }}>
+        <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "#0369a1" }}>
           Safe Journey & Calm Wayfinding
         </h2>
       </div>
@@ -175,12 +176,13 @@ export const SafeJourney: React.FC<SafeJourneyProps> = ({ onToast, readAloudDefa
             style={{
               padding: "9px 16px",
               borderRadius: "var(--radius-md)",
-              background: "var(--spring-green-700)",
+              background: "#0284c7",
               color: "#ffffff",
               border: "none",
               fontWeight: 600,
               fontSize: "0.9rem",
-              cursor: "pointer"
+              cursor: "pointer",
+              boxShadow: "0 2px 6px rgba(2, 132, 199, 0.25)"
             }}
           >
             {loading ? "Routing…" : "Find Calm Route"}

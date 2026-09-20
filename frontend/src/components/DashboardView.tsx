@@ -58,7 +58,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         aria-label="Tool categories"
         style={{
           display: "flex",
-          gap: 8,
+          gap: 10,
           marginBottom: 24,
           flexWrap: "wrap",
           alignItems: "center"
@@ -68,38 +68,74 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           Filter Tools:
         </span>
         {[
-          { id: "all", label: "✨ All Tools" },
-          { id: "sensory", label: "🌿 Sensory & Reading" },
-          { id: "communication", label: "💬 Communication" },
-          { id: "executive", label: "🎯 Executive & Habits" },
-          { id: "safety", label: "🗺️ Travel & Safety" }
-        ].map((cat) => (
-          <button
-            key={cat.id}
-            type="button"
-            role="tab"
-            data-speech={cat.label.replace(/^[^\w\s]+/, "").trim()}
-            aria-selected={activeCategory === cat.id}
-            onClick={() => setActiveCategory(cat.id as any)}
-            style={{
-              padding: "7px 16px",
-              borderRadius: "var(--radius-pill)",
-              border: activeCategory === cat.id ? "1px solid var(--spring-green-700)" : "1px solid var(--line)",
-              background: activeCategory === cat.id ? "var(--spring-mint-200)" : "var(--card)",
-              color: activeCategory === cat.id ? "var(--spring-green-900)" : "var(--ink-secondary)",
-              fontWeight: 600,
-              fontSize: "0.86rem",
-              cursor: "pointer",
-              transition: "all 0.15s ease"
-            }}
-          >
-            {cat.label}
-          </button>
-        ))}
+          {
+            id: "all",
+            label: "✨ All Tools",
+            activeBg: "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)",
+            activeBorder: "#10b981",
+            activeColor: "#065f46"
+          },
+          {
+            id: "sensory",
+            label: "🌿 Sensory & Reading",
+            activeBg: "linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)",
+            activeBorder: "#14b8a6",
+            activeColor: "#115e59"
+          },
+          {
+            id: "communication",
+            label: "💬 Communication",
+            activeBg: "linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%)",
+            activeBorder: "#6366f1",
+            activeColor: "#3730a3"
+          },
+          {
+            id: "executive",
+            label: "🎯 Executive & Habits",
+            activeBg: "linear-gradient(135deg, #fefce8 0%, #fef08a 100%)",
+            activeBorder: "#f59e0b",
+            activeColor: "#92400e"
+          },
+          {
+            id: "safety",
+            label: "🗺️ Travel & Safety",
+            activeBg: "linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)",
+            activeBorder: "#0ea5e9",
+            activeColor: "#075985"
+          }
+        ].map((cat) => {
+          const isSelected = activeCategory === cat.id;
+          return (
+            <button
+              key={cat.id}
+              type="button"
+              role="tab"
+              data-speech={cat.label.replace(/^[^\w\s]+/, "").trim()}
+              aria-selected={isSelected}
+              onClick={() => setActiveCategory(cat.id as any)}
+              style={{
+                padding: "8px 18px",
+                borderRadius: "var(--radius-pill)",
+                border: isSelected ? `2px solid ${cat.activeBorder}` : "1px solid var(--line)",
+                background: isSelected ? cat.activeBg : "var(--card)",
+                color: isSelected ? cat.activeColor : "var(--ink-secondary)",
+                fontWeight: isSelected ? 700 : 600,
+                fontSize: "0.88rem",
+                cursor: "pointer",
+                transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+                boxShadow: isSelected ? "0 2px 8px rgba(0, 0, 0, 0.06)" : "none"
+              }}
+            >
+              {cat.label}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Primary Grid */}
+      {/* Primary Grid with Gentle Tab Transition */}
       <div
+        key={activeCategory}
+        className="gentle-tab-transition"
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",

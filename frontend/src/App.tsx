@@ -13,13 +13,13 @@ export const App: React.FC = () => {
   const [viewState, setViewState] = useState<"auth" | "assessment" | "dashboard">("auth");
   const [backendOnline, setBackendOnline] = useState<boolean>(false);
   const [settings, setSettings] = useState<AccessibilitySettings>({
-    low_stimulation_interface: true,
+    low_stimulation_interface: false,
     plain_language_mode: false,
     step_by_step_tasks: true,
     read_aloud_enabled: false
   });
   const [customizationSummary, setCustomizationSummary] = useState<string>(
-    "NeuroSafe is active with gentle sensory-first visual defaults."
+    "NeuroSafe is active with an affirming, colorful visual theme."
   );
   const [problems, setProblems] = useState<string[]>(["sensory_overload", "executive_function"]);
   const [toast, setToast] = useState<{ message: string; type: "info" | "success" | "error" } | null>(null);
@@ -272,9 +272,11 @@ export const App: React.FC = () => {
 
       {/* Main App Layout */}
       {viewState === "auth" ? (
-        <AuthView onSuccess={handleAuthSuccess} onToast={showToast} />
+        <div key="auth" className="gentle-view-transition" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+          <AuthView onSuccess={handleAuthSuccess} onToast={showToast} />
+        </div>
       ) : (
-        <>
+        <div key="authed-flow" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
           <Navbar
             user={currentUser}
             backendOnline={backendOnline}
@@ -285,23 +287,27 @@ export const App: React.FC = () => {
           />
 
           {viewState === "assessment" ? (
-            <AssessmentView
-              user={currentUser}
-              onCompleted={handleAssessmentCompleted}
-              onToast={showToast}
-            />
+            <div key="assessment" className="gentle-view-transition">
+              <AssessmentView
+                user={currentUser}
+                onCompleted={handleAssessmentCompleted}
+                onToast={showToast}
+              />
+            </div>
           ) : (
-            <DashboardView
-              user={currentUser!}
-              settings={settings}
-              customizationSummary={customizationSummary}
-              problems={problems}
-              onOpenAssessment={() => setViewState("assessment")}
-              onApplySettings={handleUpdateSettings}
-              onToast={showToast}
-            />
+            <div key="dashboard" className="gentle-view-transition">
+              <DashboardView
+                user={currentUser!}
+                settings={settings}
+                customizationSummary={customizationSummary}
+                problems={problems}
+                onOpenAssessment={() => setViewState("assessment")}
+                onApplySettings={handleUpdateSettings}
+                onToast={showToast}
+              />
+            </div>
           )}
-        </>
+        </div>
       )}
 
       {/* Accessible Toast Notification */}

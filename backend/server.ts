@@ -46,6 +46,7 @@ function apiKeyAuthMiddleware(req: Request, res: Response, next: NextFunction): 
     req.path === "/api/meta" ||
     req.path === "/api/commands" ||
     req.path === "/api/key/status" ||
+    req.path.startsWith("/api/images") ||
     req.path.startsWith("/api/auth") ||
     req.path.startsWith("/frontend") ||
     !req.path.startsWith("/api")
@@ -582,6 +583,93 @@ function ruleBasedProfileSuggest(input: string): Record<string, any> {
 }
 
 // ----------------------------------------------------
+// AUTISTIC-FRIENDLY REWRITE HELPER
+// ----------------------------------------------------
+export const AUTISTIC_FRIENDLY_SYSTEM_PROMPT =
+  "Rewrite the input for easy autistic-friendly reading. Use short literal sentences, simple words, clear headings, bullet points, and explicit instructions. Remove idioms, sarcasm, ambiguity, unnecessary detail, and sensory/visual clutter. Preserve meaning. Output only the rewritten text.";
+
+export function rewriteAutisticFriendlyDeterministic(input: string): string {
+  let cleaned = input.trim();
+  const idiomMap: [RegExp, string][] = [
+    [/not rocket science/gi, "simple"],
+    [/circling back|circle back/gi, "following up"],
+    [/hit the ground running/gi, "start right away"],
+    [/behind the eight ball/gi, "behind schedule"],
+    [/don't sweat it|do not sweat it/gi, "do not worry"],
+    [/touch base/gi, "talk or write"],
+    [/take a crack at/gi, "try to work on"],
+    [/when you get a chance|at your earliest convenience/gi, "when you are free"],
+    [/no rush, but the sooner the better/gi, "please do this today if you can"],
+    [/double-edged sword/gi, "has both good parts and bad parts"],
+    [/hit a home run/gi, "did very well"],
+    [/missed the forest for the trees/gi, "focused on small details instead of the main goal"],
+    [/ball is in your court/gi, "it is your turn to reply"],
+    [/bite the bullet/gi, "do the necessary difficult task"],
+    [/under the weather/gi, "feeling sick"],
+    [/bring to the table/gi, "contribute"],
+    [/per our sync/gi, "as discussed in our meeting"],
+    [/synergy/gi, "cooperation"],
+    [/downstream deliverables/gi, "next tasks"],
+    [/recalibrate resource allocation/gi, "change who works on what"],
+    [/optimal ROI/gi, "best results"],
+    [/please be advised that/gi, ""],
+    [/prior to intake/gi, "before your appointment"],
+    [/aforementioned/gi, "earlier mentioned"],
+    [/necessitate rescheduling at subsequent availability/gi, "mean you must pick a later date"]
+  ];
+
+  for (const [pattern, replacement] of idiomMap) {
+    cleaned = cleaned.replace(pattern, replacement);
+  }
+
+  // Split into sentences
+  const rawSentences = cleaned
+    .replace(/([.?!])\s*(?=[A-Z0-9])/g, "$1|SPLIT|")
+    .split("|SPLIT|")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+
+  const actions: string[] = [];
+  const information: string[] = [];
+
+  for (const s of rawSentences) {
+    const lower = s.toLowerCase();
+    if (
+      lower.startsWith("please") ||
+      lower.startsWith("you must") ||
+      lower.startsWith("you should") ||
+      lower.startsWith("complete") ||
+      lower.startsWith("send") ||
+      lower.startsWith("fill") ||
+      lower.startsWith("bring") ||
+      lower.startsWith("do ") ||
+      lower.includes("need to") ||
+      lower.includes("action")
+    ) {
+      actions.push(s.replace(/^please\s+/i, ""));
+    } else {
+      information.push(s);
+    }
+  }
+
+  const sections: string[] = [];
+
+  if (information.length > 0) {
+    sections.push("### What This Means:\n" + information.map((info) => `• ${info}`).join("\n"));
+  }
+
+  if (actions.length > 0) {
+    sections.push("### What You Need To Do:\n" + actions.map((act, i) => `${i + 1}. ${act}`).join("\n"));
+  }
+
+  if (sections.length === 0) {
+    sections.push("### Summary:\n• " + cleaned);
+  }
+
+  return sections.join("\n\n");
+}
+
+// ----------------------------------------------------
 // LLM COMPLETION HELPER (Using resilient fallback models)
 // ----------------------------------------------------
 async function completeText(systemPrompt: string, userText: string): Promise<string> {
@@ -623,7 +711,9 @@ async function completeText(systemPrompt: string, userText: string): Promise<str
     }
   }
 
-  // Deterministic fallbacks
+  if (systemPrompt.includes("Rewrite the input for easy autistic-friendly reading")) {
+    return rewriteAutisticFriendlyDeterministic(userText);
+  }
   if (systemPrompt.includes("Break the task into clear")) {
     return `1. Gather what you need for the task.\n2. Review the very first action without worrying about the full list.\n3. Complete the first step at a comfortable pace.\n4. Take a short pause before deciding if you want to proceed.\n5. Note down your progress so you can return anytime.`;
   }
@@ -638,120 +728,288 @@ async function completeText(systemPrompt: string, userText: string): Promise<str
 }
 
 // ----------------------------------------------------
-// OCR & IMAGE PROCESSING HELPER (IMPROVED OCR + CAMERA)
+// BUILT-IN SENSORY & ACCESSIBILITY IMAGES CATALOG
 // ----------------------------------------------------
-interface OcrResult {
-  text: string;
-  raw_text: string;
-  clean_text: string;
-  summary: string;
-  word_count: number;
-  source: string;
-  prewritten_commands?: string[];
-}
-
-async function performHighAccuracyOcr(
-  imageBuffer: Buffer,
-  mimeType: string,
-  filename?: string
-): Promise<OcrResult> {
-  const base64Data = imageBuffer.toString("base64");
-
-  // 1. Try Gemini Multimodal Vision with fallback across models
-  const ocrText = await generateContentWithFallback({
-    preferredModel: "gemini-3.8-flash",
-    contents: [
-      {
-        role: "user",
-        parts: [
-          {
-            inlineData: {
-              data: base64Data,
-              mimeType: mimeType || "image/jpeg",
-            },
-          },
-          {
-            text: `You are an expert OCR and accessibility visual assistant.
-1. Transcribe all text visible in this image verbatim, preserving original paragraph breaks and headers.
-2. If there are tables, signs, or forms, format them clearly.
-3. At the end, provide a 1-sentence Plain Language Summary.`,
-          },
-        ],
-      },
-    ],
-  });
-
-  if (ocrText) {
-    const wordCount = ocrText.split(/\s+/).filter(Boolean).length;
-    const formattedDisplay = ocrText.trim();
-
-    return {
-      text: formattedDisplay,
-      raw_text: ocrText,
-      clean_text: ocrText,
-      summary: "Transcribed with Gemini Multimodal OCR.",
-      word_count: wordCount,
-      source: "gemini_multimodal_ocr",
-    };
-  }
-
-  // 2. Try Google Vision API if GOOGLE_VISION_API_KEY is available
-  const visionKey = process.env.GOOGLE_VISION_API_KEY;
-  if (visionKey) {
-    try {
-      const payload = {
-        requests: [
-          {
-            image: { content: base64Data },
-            features: [
-              { type: "DOCUMENT_TEXT_DETECTION" },
-              { type: "TEXT_DETECTION" },
-            ],
-          },
-        ],
-      };
-      const resp = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${visionKey}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data: any = await resp.json();
-      const annotation =
-        data?.responses?.[0]?.fullTextAnnotation?.text ||
-        data?.responses?.[0]?.textAnnotations?.[0]?.description ||
-        "";
-
-      if (annotation.trim()) {
-        const wordCount = annotation.split(/\s+/).filter(Boolean).length;
-        const formattedDisplay = annotation.trim();
-        return {
-          text: formattedDisplay,
-          raw_text: annotation.trim(),
-          clean_text: annotation.trim(),
-          summary: "Extracted via Google Cloud Vision OCR.",
-          word_count: wordCount,
-          source: "google_vision",
-        };
-      }
-    } catch (err) {
-      console.warn("Google Vision API call failed:", err);
-    }
-  }
-
-  // 3. Informative fallback with diagnostic details
-  const sizeKb = (imageBuffer.length / 1024).toFixed(1);
-  const fallbackMessage = `Image received: ${filename || "camera_frame.jpg"} (${sizeKb} KB, ${mimeType}).\n\nOCR Processing Note:\nTo enable live optical character recognition with high-accuracy layout preservation, configure GEMINI_API_KEY or GOOGLE_VISION_API_KEY in your settings.`;
-  const formattedDisplay = fallbackMessage.trim();
-
-  return {
-    text: formattedDisplay,
-    raw_text: fallbackMessage,
-    clean_text: fallbackMessage,
-    summary: "Image received and validated.",
-    word_count: fallbackMessage.split(/\s+/).filter(Boolean).length,
-    source: "local_image_processor",
+export interface BuiltInImageServer {
+  id: string;
+  title: string;
+  category: "text_overwhelm" | "screen_fatigue" | "executive_adhd" | "grounding" | "aac_card" | "routine" | "regulation";
+  badge: string;
+  icon: string;
+  description: string;
+  plain_summary: string;
+  sensory_prompt: string;
+  spoken_text: string;
+  palette: {
+    bg: string;
+    fg: string;
+    accent: string;
   };
+  tags: string[];
 }
+
+export const BUILT_IN_IMAGES_CATALOG: BuiltInImageServer[] = [
+  // 1. Long Text Overwhelm & Reading
+  {
+    id: "guide-reading-ruler",
+    title: "Wall of Text Deconstructor & Reading Ruler",
+    category: "text_overwhelm",
+    badge: "Long Text Relief",
+    icon: "📖",
+    description: "A dedicated visual anchor demonstrating the 'Reading Ruler' technique: isolating a single line at a time, anchoring gaze on initial letters, and breaking intimidating unbroken blocks of text into 3-item bullet clusters.",
+    plain_summary: "When long paragraphs turn into an intimidating wall of text, use a reading ruler to isolate one line at a time and highlight the first letters of each word.",
+    sensory_prompt: "Cover the paragraph below with a card or finger. Read only one isolated sentence. Take a breath before moving down.",
+    spoken_text: "Wall of Text Deconstruction. When text feels overwhelming, do not attempt to scan the whole page. Isolate a single line, anchor your gaze on the first three words, and group thoughts into three concise bullet points.",
+    palette: { bg: "#1e1b18", fg: "#f7f0e6", accent: "#c4893b" },
+    tags: ["text", "reading", "ruler", "adhd", "dyslexia", "focus"],
+  },
+  {
+    id: "card-wall-of-text",
+    title: "Wall of Text Overwhelm AAC Card",
+    category: "text_overwhelm",
+    badge: "Non-Verbal AAC",
+    icon: "💬",
+    description: "A high-visibility card to show colleagues, teachers, or family when presented with dense, unbulleted messages that trigger cognitive freeze.",
+    plain_summary: "Show this card to ask people to send bullet points instead of long, dense paragraphs of text.",
+    sensory_prompt: "Card message: 'This is a wall of text. My working memory cannot process dense paragraphs right now. Please summarize in 2–3 short bullet points. Thank you.'",
+    spoken_text: "Notice: Wall of text overwhelm. My working memory is full and cannot unpack dense paragraphs right now. Please send a summary in two or three short bullet points.",
+    palette: { bg: "#16212b", fg: "#ffffff", accent: "#5299b8" },
+    tags: ["text", "aac", "overwhelm", "bullets", "communication"],
+  },
+
+  // 2. Digital Screen Fatigue & Blue Light Glare
+  {
+    id: "guide-screen-fatigue",
+    title: "Digital Screen Reset & 20-20-20 Sanctuary",
+    category: "screen_fatigue",
+    badge: "Screen Relief",
+    icon: "🖥️",
+    description: "A visual antidote to digital monitor glare, fluorescent PWM flicker, and dry-eye strain. Guides the 20-20-20 distance reset, screen color warmth shift, and palming darkness rest.",
+    plain_summary: "Rest your eyes from screens: Every 20 minutes, look 20 feet away for 20 seconds. Cup your warm palms over your closed eyes for soothing complete darkness.",
+    sensory_prompt: "Gently cup warm palms over your closed eyes without pressing the eyeballs. Bask in 30 seconds of pure, pitch-black darkness.",
+    spoken_text: "Digital Screen Reset. Rest your eyes from monitors and phones. Every twenty minutes, look twenty feet into the distance for twenty seconds. Warm your palms together and place them gently over your closed eyes to give your optic nerve total darkness.",
+    palette: { bg: "#1a1622", fg: "#eeddfa", accent: "#9b76c9" },
+    tags: ["screen", "eyes", "glare", "headache", "rest", "autism"],
+  },
+  {
+    id: "card-screen-break",
+    title: "Screen Sensory Break Needed Card",
+    category: "screen_fatigue",
+    badge: "Non-Verbal AAC",
+    icon: "📵",
+    description: "A card to inform others that you are stepping away from displays, phones, and monitors due to visual sensory overload or migraine onset.",
+    plain_summary: "Show this card when screen glare, notifications, or monitor light are causing headaches or sensory shutdown.",
+    sensory_prompt: "Card message: 'Stepping away from digital screens for 15–30 minutes due to eye fatigue and sensory overload. Will reply once rested.'",
+    spoken_text: "Notice: Digital screen break active. I am experiencing screen-induced eye fatigue or sensory overload. I am stepping away from monitors and phones for a short rest.",
+    palette: { bg: "#1b2721", fg: "#e8f5ee", accent: "#4ea379" },
+    tags: ["screen", "break", "offline", "aac", "photophobia"],
+  },
+  {
+    id: "guide-doomscroll-interrupt",
+    title: "Screen Doomscroll & Dopamine Loop Interrupt",
+    category: "screen_fatigue",
+    badge: "ADHD Screen Loop",
+    icon: "🛑",
+    description: "An authentic ADHD pattern interrupt for when you are trapped in an infinite scrolling loop or hyperfocus screen lock despite wanting to stop.",
+    plain_summary: "A visual stop sign to snap out of infinite scroll: Put phone face down, feel your feet on the floor, stretch fingers, and drink water.",
+    sensory_prompt: "Place your device face-down right now. Do not look at the glass. Push your heels firmly into the ground. Breathe.",
+    spoken_text: "Pattern Interrupt: Break the screen loop. You are caught in a dopamine scroll loop. Place your device face down right now. Look up at the ceiling. Wiggle your toes. You did not miss anything important. You are here in the real room.",
+    palette: { bg: "#261520", fg: "#ffecf2", accent: "#d94168" },
+    tags: ["doomscroll", "adhd", "dopamine", "phone", "loop", "trap"],
+  },
+  {
+    id: "guide-fluorescent-glare",
+    title: "Fluorescent Buzz & Glare Shield",
+    category: "screen_fatigue",
+    badge: "Sensory Photophobia",
+    icon: "💡",
+    description: "A sensory guide for handling overhead fluorescent light buzz, 60Hz flicker, and harsh office monitor reflections.",
+    plain_summary: "Ways to reduce photophobic distress: Wear tinted glasses or a baseball cap, use warm desk lamps instead of overhead lighting, and set screens to 40% brightness.",
+    sensory_prompt: "Notice the tension in your brow. Lower overhead fluorescent lights if possible, or shade your eyes with a soft visor or brimmed hat.",
+    spoken_text: "Fluorescent and Monitor Glare Shield. Overhead fluorescent tubes flicker sixty times a second, draining autistic and ADHD energy reserves. Shield your eyes with tinted lenses or a visor, tilt monitors away from direct light, and soften screen contrast.",
+    palette: { bg: "#241f17", fg: "#fcefdc", accent: "#ab8532" },
+    tags: ["fluorescent", "flicker", "glare", "autism", "migraine", "sensory"],
+  },
+
+  // 3. ADHD Executive Function & Initiation
+  {
+    id: "guide-initiation-friction",
+    title: "The 2-Minute First Slice (Overcoming Task Paralysis)",
+    category: "executive_adhd",
+    badge: "ADHD Executive Function",
+    icon: "⚡",
+    description: "A visual guide for deconstructing the 'Wall of Awful'—the emotional and executive freeze that prevents starting a task. Shrinks the task to a micro-action.",
+    plain_summary: "Do not attempt the entire task. Only commit to doing the first 2 minutes or opening the file. You have full permission to stop after that.",
+    sensory_prompt: "Shrink the task: instead of 'clean the entire room', pick up literally ONE sock. Instead of 'write report', write only the title.",
+    spoken_text: "The Two Minute First Slice. Task initiation paralysis is an executive function obstacle, not laziness. Lower the bar until it feels ridiculously easy. Commit only to the first physical action, like opening the document. You can stop after two minutes.",
+    palette: { bg: "#18261e", fg: "#eaf5ee", accent: "#48996b" },
+    tags: ["adhd", "initiation", "paralysis", "executive", "friction", "start"],
+  },
+  {
+    id: "card-deep-focus",
+    title: "Deep Focus Flow Card",
+    category: "executive_adhd",
+    badge: "Non-Verbal AAC",
+    icon: "🎯",
+    description: "A peaceful green indicator to preserve hyperfocus or deep flow states, preventing cognitive context switching.",
+    plain_summary: "Place this card on your desk or show it to coworkers to protect your flow state without being rude.",
+    sensory_prompt: "Card message: 'In deep focus flow. Please send a written message or wait unless it is an urgent emergency.'",
+    spoken_text: "Notice: Deep focus flow state active. Please send an email or text message unless urgent.",
+    palette: { bg: "#142823", fg: "#daf2e9", accent: "#2f7a62" },
+    tags: ["focus", "adhd", "flow", "aac", "work"],
+  },
+
+  // 4. Autistic Sensory & Non-Verbal AAC
+  {
+    id: "card-sensory-overload",
+    title: "Sensory Overload Visual Card",
+    category: "aac_card",
+    badge: "Non-Verbal AAC",
+    icon: "🎧",
+    description: "A high-contrast, clear AAC communication card designed to be held up or shown on screen to communicate sensory distress without needing speech.",
+    plain_summary: "Show this card to let people know you are overwhelmed by sound or lights and need a quiet moment.",
+    sensory_prompt: "Card message: 'I am experiencing sensory overload. Please speak quietly or give me space to recover. Thank you.'",
+    spoken_text: "Notice: I am currently experiencing sensory overload. Loud sounds or lights are difficult right now. Please lower volume or give me a quiet moment.",
+    palette: { bg: "#18322f", fg: "#ffffff", accent: "#216b54" },
+    tags: ["aac", "overload", "communication", "nonverbal", "card"],
+  },
+  {
+    id: "card-auditory-delay",
+    title: "Auditory Processing Delay AAC Card",
+    category: "aac_card",
+    badge: "Non-Verbal AAC",
+    icon: "👂",
+    description: "An AAC card explaining auditory processing delays common in autistic and ADHD individuals, requesting written follow-ups or subtitles.",
+    plain_summary: "Show this card when spoken words sound like static or background noise makes it impossible to comprehend speech.",
+    sensory_prompt: "Card message: 'I have an auditory processing delay. Spoken words take extra time to decode. Please send key points in writing or repeat slowly.'",
+    spoken_text: "Notice: Auditory Processing Delay. In noisy rooms or when fatigued, spoken words take extra time for my brain to decode. Please provide written instructions or key bullet points.",
+    palette: { bg: "#131e2b", fg: "#def0fa", accent: "#3b8ab8" },
+    tags: ["auditory", "apd", "aac", "subtitles", "written", "autism"],
+  },
+  {
+    id: "card-low-spoons",
+    title: "Low Energy / Processing Time Card",
+    category: "aac_card",
+    badge: "Non-Verbal AAC",
+    icon: "🔋",
+    description: "A gentle visual card to indicate depleted cognitive energy, spoon deficit, or need for reduced demand.",
+    plain_summary: "Show this card when your energy battery is low so others know you can't engage in long conversations right now.",
+    sensory_prompt: "Card message: 'My energy battery is low. I am listening, but I need extra processing time to respond.'",
+    spoken_text: "Card text: Low energy and limited spoons right now. I am listening, but need extra processing time. Patience is appreciated.",
+    palette: { bg: "#2b2a1a", fg: "#fdf8dc", accent: "#a3952f" },
+    tags: ["aac", "energy", "spoons", "battery", "communication"],
+  },
+
+  // 5. Somatic Breathing & Regulation
+  {
+    id: "guide-box-breathing",
+    title: "Box Breathing 4-4-4-4 Visual Pacer",
+    category: "regulation",
+    badge: "Regulation Guide",
+    icon: "🫁",
+    description: "A structured 4-sided breathing diagram guiding equal 4-second intervals: Inhale, Hold, Exhale, and Rest to reset the nervous system.",
+    plain_summary: "Follow the square: Breathe in for 4, hold for 4, breathe out for 4, rest for 4. Repeat 3 times to reset.",
+    sensory_prompt: "Look at each edge of the box. Count slowly: 1... 2... 3... 4. Notice how your pulse slows down.",
+    spoken_text: "Box Breathing Guide. Inhale 4 seconds. Hold 4 seconds. Exhale 4 seconds. Rest 4 seconds.",
+    palette: { bg: "#182c30", fg: "#d8f2f5", accent: "#377580" },
+    tags: ["breathing", "regulation", "vagus", "anxiety", "guide"],
+  },
+  {
+    id: "guide-54321-grounding",
+    title: "5-4-3-2-1 Sensory Grounding Board",
+    category: "regulation",
+    badge: "Regulation Guide",
+    icon: "🖐️",
+    description: "A visual reference anchor board for the classical 5-4-3-2-1 grounding technique, breaking anxiety loops through physical presence.",
+    plain_summary: "Look around you and name: 5 things you see, 4 you can touch, 3 you can hear, 2 you can smell, and 1 you can taste.",
+    sensory_prompt: "Scan your current room right now. Spot 5 different colors or textures. Touch your clothes or chair. Listen for background humming.",
+    spoken_text: "5-4-3-2-1 Grounding Method. Five things you see. Four things you touch. Three sounds. Two scents. One mindful breath.",
+    palette: { bg: "#241f30", fg: "#ebdffa", accent: "#765fa3" },
+    tags: ["54321", "grounding", "anxiety", "sensory", "mindfulness"],
+  },
+
+  // 6. Routine
+  {
+    id: "routine-morning-reset",
+    title: "Gentle Morning Micro-Routines",
+    category: "routine",
+    badge: "Visual Routine",
+    icon: "☀️",
+    description: "A low-demand visual sequence for easing into the day without executive overload or rush panic.",
+    plain_summary: "Step 1: Drink water. Step 2: Natural daylight. Step 3: Medication & breakfast. Step 4: Pick one micro task.",
+    sensory_prompt: "Give your brain 10 quiet minutes to wake up at its own natural pace without phone notifications.",
+    spoken_text: "Gentle Morning Routine. Drink water, welcome daylight, take morning nutrition, and pick one small step.",
+    palette: { bg: "#2b2318", fg: "#fdedd6", accent: "#bd7f28" },
+    tags: ["morning", "routine", "adhd", "executive", "habits"],
+  },
+
+  // 7. Grounding Sanctuaries
+  {
+    id: "quiet-forest",
+    title: "Serene Pine Forest Clearing",
+    category: "grounding",
+    badge: "Sensory Grounding",
+    icon: "🌲",
+    description: "A peaceful clearing surrounded by tall evergreens with soft morning mist rolling between the trunks. Filtered emerald light warms the mossy forest floor with zero harsh glare.",
+    plain_summary: "A calm green forest with soft light, gentle trees, and fresh mountain air to help settle an overwhelmed nervous system.",
+    sensory_prompt: "Take 3 deep breaths. Imagine the scent of damp cedar, cool pine needles underfoot, and the quiet rustle of high branches.",
+    spoken_text: "Serene Pine Forest Clearing. Soft morning mist settles between tall cedar trees. Dappled sunlight rests gently on the emerald moss without harsh glare.",
+    palette: { bg: "#1b332b", fg: "#d7ede1", accent: "#438b72" },
+    tags: ["nature", "trees", "calm", "green", "grounding"],
+  },
+  {
+    id: "gentle-ocean",
+    title: "Tranquil Pastel Ocean Horizon",
+    category: "grounding",
+    badge: "Sensory Grounding",
+    icon: "🌊",
+    description: "A quiet shoreline where calm, low-amplitude waves lap against fine wet sand. Soft twilight blues and sage teals provide an even, soothing visual rhythm.",
+    plain_summary: "A wide, quiet sea with gentle waves. The steady, predictable rhythm helps quiet racing thoughts.",
+    sensory_prompt: "Inhale as the gentle foam washes up on the shore. Exhale as the water smoothly recedes back into the blue expanse.",
+    spoken_text: "Tranquil Pastel Ocean Horizon. Flat, calm waves roll rhythmically against the shore. A soft evening breeze across the open horizon creates steady stillness.",
+    palette: { bg: "#162833", fg: "#d6eaf5", accent: "#3a738c" },
+    tags: ["ocean", "water", "waves", "blue", "horizon"],
+  },
+  {
+    id: "rainy-sanctuary",
+    title: "Raindrops on Warm Window",
+    category: "grounding",
+    badge: "Sensory Grounding",
+    icon: "🌧️",
+    description: "Looking out through a clean window pane covered in smooth raindrops with muted warm bokeh lights in the background.",
+    plain_summary: "A quiet indoor sanctuary shielded from outside noise while rain falls peacefully against the glass.",
+    sensory_prompt: "Focus on the sound of steady rain: white noise shielding you from demanding social sensory inputs. You are safe inside.",
+    spoken_text: "Raindrops on Warm Window. Outside, gentle rain washes the world clean with quiet patter. Inside, warm shelter and comforting quiet envelop you.",
+    palette: { bg: "#1c242a", fg: "#d9e3ea", accent: "#4c667a" },
+    tags: ["rain", "window", "cozy", "indoor", "shelter"],
+  },
+  {
+    id: "cozy-hearth",
+    title: "Warm Fireside & Knitted Hearth",
+    category: "grounding",
+    badge: "Sensory Grounding",
+    icon: "🔥",
+    description: "A soft, crackling hearth fire glowing with warm amber embers, providing comforting deep pressure comfort.",
+    plain_summary: "Gentle warmth, soft amber light, and no sudden loud sounds. A comforting sanctuary to reset after social exhaustion.",
+    sensory_prompt: "Imagine wrapping yourself in a heavy, comforting wool blanket while warmth soothes tense shoulder muscles.",
+    spoken_text: "Warm Fireside and Knitted Hearth. Gentle golden embers crackle with steady warmth. Relax your shoulders and breathe slowly.",
+    palette: { bg: "#2b1e16", fg: "#fce9da", accent: "#a85e33" },
+    tags: ["fireplace", "warmth", "cozy", "amber", "hearth"],
+  },
+  {
+    id: "starlit-sky",
+    title: "Deep Cosmos & Starlit Meadow",
+    category: "grounding",
+    badge: "Sensory Grounding",
+    icon: "✨",
+    description: "A velvet night sky filled with gentle, non-flickering distant stars and soft indigo nebulae arching over a quiet meadow.",
+    plain_summary: "Deep night sky with soft star fields. Expansive, peaceful space to relieve feelings of sensory crowding.",
+    sensory_prompt: "Take comfort in how vast and quiet the night sky is. You do not need to perform or explain anything right now.",
+    spoken_text: "Deep Cosmos and Starlit Meadow. The velvet indigo sky holds millions of quiet stars. The world is resting.",
+    palette: { bg: "#0d131f", fg: "#e0e8fc", accent: "#2c467a" },
+    tags: ["stars", "night", "sky", "space", "quiet"],
+  },
+];
 
 // ----------------------------------------------------
 // API ROUTES
@@ -775,8 +1033,7 @@ app.get("/api/meta", (req: Request, res: Response) => {
     features: [
       "profile_suggestion",
       "profile_persistence",
-      "high_accuracy_ocr",
-      "camera_capture_and_scene_analysis",
+      "built_in_sensory_images",
       "plain_text_explanation",
       "respectful_message_drafting",
       "grounding_calm_sequence",
@@ -797,8 +1054,8 @@ app.get("/api/commands", (req: Request, res: Response) => {
       "POST /api/profile/suggest",
       "GET /api/habits",
       "POST /api/habits",
-      "POST /api/camera/capture",
-      "POST /api/read",
+      "GET /api/images",
+      "GET /api/images/:id",
       "POST /api/explain",
       "POST /api/say",
       "GET /api/calm",
@@ -815,11 +1072,9 @@ app.get("/api/key/status", (req: Request, res: Response) => {
     apiKeyConfigured: Boolean(CONFIGURED_API_KEY),
     services: {
       gemini: Boolean(process.env.GEMINI_API_KEY),
-      google_vision: Boolean(process.env.GOOGLE_VISION_API_KEY),
       google_maps: Boolean(process.env.GOOGLE_MAPS_API_KEY),
       custom_llm: Boolean(process.env.LLM_BASE_URL),
     },
-    camera_permission: "camera",
     instructions: CONFIGURED_API_KEY
       ? "Pass your key in 'x-api-key' header or 'Authorization: Bearer <key>'"
       : "API key protection is optional. Direct access enabled.",
@@ -1200,265 +1455,81 @@ Respond ONLY with a valid JSON object strictly matching this schema:
 });
 
 // ----------------------------------------------------
-// 4. READ FOR ME (OCR & CAMERA IMAGES)
+// 4. BUILT-IN SENSORY & AAC IMAGES (REPLACES CAMERA & OCR)
 // ----------------------------------------------------
-app.post("/api/read", upload.single("image") as any, async (req: Request, res: Response) => {
-  try {
-    let imageBuffer: Buffer | null = null;
-    let mimeType = "image/jpeg";
-    let originalName = "upload.jpg";
 
-    // Handle multipart form upload
-    if (req.file) {
-      imageBuffer = req.file.buffer;
-      mimeType = req.file.mimetype || "image/jpeg";
-      originalName = req.file.originalname || "upload.jpg";
-    } else if (req.body?.image || req.body?.photo || req.body?.camera_frame) {
-      // Handle base64 / Data URI uploaded in JSON (e.g. from camera)
-      const dataStr: string = req.body.image || req.body.photo || req.body.camera_frame;
-      if (dataStr.startsWith("data:")) {
-        const match = dataStr.match(/^data:([^;]+);base64,(.+)$/);
-        if (match) {
-          mimeType = match[1];
-          imageBuffer = Buffer.from(match[2], "base64");
-        } else {
-          imageBuffer = Buffer.from(dataStr, "base64");
-        }
-      } else {
-        imageBuffer = Buffer.from(dataStr, "base64");
-      }
-      originalName = "camera_snapshot.jpg";
-    }
+// List built-in images, with optional category filtering
+app.get("/api/images", (req: Request, res: Response) => {
+  const category = req.query.category as string;
+  let items = BUILT_IN_IMAGES_CATALOG;
 
-    if (!imageBuffer || imageBuffer.length === 0) {
-      return res.status(400).json({
-        detail: "The image is empty or missing. Upload an image file or provide a base64 camera image.",
-      });
-    }
-
-    const ocrResult = await performHighAccuracyOcr(imageBuffer, mimeType, originalName);
-    return res.json(ocrResult);
-  } catch (err: any) {
-    console.error("Read OCR error:", err);
-    return res.status(500).json({ detail: `OCR Processing failed: ${err?.message || err}` });
+  if (category && category !== "all") {
+    items = BUILT_IN_IMAGES_CATALOG.filter((img) => img.category === category);
   }
-});
 
-// ----------------------------------------------------
-// CAMERA FEATURE ENDPOINTS
-// ----------------------------------------------------
-
-// Camera feature info
-app.get("/api/camera", (req: Request, res: Response) => {
-  res.json({
-    status: "active",
-    supported_formats: ["image/jpeg", "image/png", "image/webp", "multipart/form-data", "data:image/*;base64"],
-    max_frame_size_bytes: 15 * 1024 * 1024,
-    camera_permission: "camera",
-    capabilities: [
-      "live_camera_ocr",
-      "sensory_scene_description",
-      "wayfinding_sign_detection",
-      "crowd_and_lighting_analysis",
-    ],
+  return res.json({
+    total: items.length,
+    category: category || "all",
+    images: items,
   });
 });
 
-// Camera Capture & OCR
-app.post("/api/camera/capture", upload.single("image") as any, async (req: Request, res: Response) => {
-  try {
-    let imageBuffer: Buffer | null = null;
-    let mimeType = "image/jpeg";
+// Get a single built-in image by ID
+app.get("/api/images/:id", (req: Request, res: Response) => {
+  const id = req.params.id;
+  const image = BUILT_IN_IMAGES_CATALOG.find((img) => img.id === id);
 
-    if (req.file) {
-      imageBuffer = req.file.buffer;
-      mimeType = req.file.mimetype || "image/jpeg";
-    } else if (req.body?.image || req.body?.photo || req.body?.camera_frame) {
-      const dataStr: string = req.body.image || req.body.photo || req.body.camera_frame;
-      if (dataStr.startsWith("data:")) {
-        const match = dataStr.match(/^data:([^;]+);base64,(.+)$/);
-        if (match) {
-          mimeType = match[1];
-          imageBuffer = Buffer.from(match[2], "base64");
-        } else {
-          imageBuffer = Buffer.from(dataStr, "base64");
-        }
-      } else {
-        imageBuffer = Buffer.from(dataStr, "base64");
-      }
-    }
-
-    if (!imageBuffer || imageBuffer.length === 0) {
-      return res.status(400).json({
-        detail: "Camera frame is required. Send multipart image or JSON with base64 'image'.",
-      });
-    }
-
-    const ocrResult = await performHighAccuracyOcr(imageBuffer, mimeType, "camera_frame.jpg");
-    return res.json({
-      camera: "capture_success",
-      ...ocrResult,
-    });
-  } catch (err: any) {
-    return res.status(500).json({ detail: `Camera OCR failed: ${err?.message || err}` });
+  if (!image) {
+    return res.status(404).json({ detail: `Image with id '${id}' not found.` });
   }
-});
 
-// Camera Scene Description (Sensory-friendly for low-vision or overwhelmed users)
-app.post("/api/camera/describe", upload.single("image") as any, async (req: Request, res: Response) => {
-  try {
-    let imageBuffer: Buffer | null = null;
-    let mimeType = "image/jpeg";
-
-    if (req.file) {
-      imageBuffer = req.file.buffer;
-      mimeType = req.file.mimetype || "image/jpeg";
-    } else if (req.body?.image || req.body?.photo || req.body?.camera_frame) {
-      const dataStr: string = req.body.image || req.body.photo || req.body.camera_frame;
-      if (dataStr.startsWith("data:")) {
-        const match = dataStr.match(/^data:([^;]+);base64,(.+)$/);
-        if (match) {
-          mimeType = match[1];
-          imageBuffer = Buffer.from(match[2], "base64");
-        }
-      } else {
-        imageBuffer = Buffer.from(dataStr, "base64");
-      }
-    }
-
-    if (!imageBuffer || imageBuffer.length === 0) {
-      return res.status(400).json({ detail: "Camera image required for scene description." });
-    }
-
-    let description = "A calm room with clear walkways and visible signs.";
-    const aiDesc = await generateContentWithFallback({
-      preferredModel: "gemini-3.8-flash",
-      contents: [
-        {
-          role: "user",
-          parts: [
-            {
-              inlineData: {
-                data: imageBuffer.toString("base64"),
-                mimeType,
-              },
-            },
-            {
-              text: `Describe this camera view in a calm, clear, sensory-friendly manner.
-1. Mention main items, pathways, doors, and signs.
-2. Note lighting conditions (soft, harsh, flickering) and clutter level.
-3. Keep the tone grounded, objective, and supportive.`,
-            },
-          ],
-        },
-      ],
-    });
-
-    if (aiDesc) {
-      description = aiDesc;
-    }
-
-    const formatted = description.trim();
-    return res.json({
-      description: formatted,
-      raw_description: description,
-    });
-  } catch (err: any) {
-    return res.status(500).json({ detail: `Camera describe error: ${err?.message || err}` });
-  }
-});
-
-// Camera Environment & Sensory Clutter Analysis
-app.post("/api/camera/analyze", upload.single("image") as any, async (req: Request, res: Response) => {
-  try {
-    let imageBuffer: Buffer | null = null;
-    let mimeType = "image/jpeg";
-
-    if (req.file) {
-      imageBuffer = req.file.buffer;
-      mimeType = req.file.mimetype || "image/jpeg";
-    } else if (req.body?.image || req.body?.photo || req.body?.camera_frame) {
-      const dataStr: string = req.body.image || req.body.photo || req.body.camera_frame;
-      if (dataStr.startsWith("data:")) {
-        const match = dataStr.match(/^data:([^;]+);base64,(.+)$/);
-        if (match) {
-          mimeType = match[1];
-          imageBuffer = Buffer.from(match[2], "base64");
-        }
-      } else {
-        imageBuffer = Buffer.from(dataStr, "base64");
-      }
-    }
-
-    if (!imageBuffer || imageBuffer.length === 0) {
-      return res.status(400).json({ detail: "Camera image required for analysis." });
-    }
-
-    let analysisResult: any = {
-      lighting: "Moderate, consistent indoor lighting",
-      visual_clutter: "Low to moderate",
-      navigation_clarity: "Clear pathways visible",
-      recommended_action: "Comfortable environment. Proceed at your own pace.",
-    };
-
-    const aiAnalysis = await generateContentWithFallback({
-      preferredModel: "gemini-3.8-flash",
-      contents: [
-        {
-          role: "user",
-          parts: [
-            {
-              inlineData: {
-                data: imageBuffer.toString("base64"),
-                mimeType,
-              },
-            },
-            {
-              text: `Analyze this space for accessibility and sensory safety.
-Return a JSON object with:
-{
-  "lighting": "Description of lighting",
-  "visual_clutter": "Low, medium, or high clutter assessment",
-  "navigation_clarity": "Pathways and landmark assessment",
-  "recommended_action": "Helpful, gentle recommendation"
-}`,
-            },
-          ],
-        },
-      ],
-      config: { responseMimeType: "application/json" },
-    });
-
-    if (aiAnalysis) {
-      try {
-        analysisResult = JSON.parse(aiAnalysis);
-      } catch {
-        // Keep default fallback
-      }
-    }
-
-    return res.json({
-      sensory_analysis: analysisResult,
-    });
-  } catch (err: any) {
-    return res.status(500).json({ detail: `Camera analysis error: ${err?.message || err}` });
-  }
+  return res.json(image);
 });
 
 // ----------------------------------------------------
-// 5. EXPLAIN SIMPLY
+// RETIRED CAMERA & OCR ROUTES
 // ----------------------------------------------------
-app.post("/api/explain", async (req: Request, res: Response) => {
+app.all(["/api/read", "/api/camera", "/api/camera/*"], (req: Request, res: Response) => {
+  return res.status(410).json({
+    detail: "Camera and OCR features have been replaced with the built-in sensory images library.",
+    replacement_endpoint: "/api/images",
+  });
+});
+
+// ----------------------------------------------------
+// 5. AUTISTIC-FRIENDLY REWRITER & EXPLAIN
+// ----------------------------------------------------
+app.post(["/api/read-for-me", "/api/rewrite-autistic"], async (req: Request, res: Response) => {
   const rawText = req.body?.text || req.body?.input;
   if (!rawText || typeof rawText !== "string" || !rawText.trim()) {
     return res.status(400).json({ detail: "text must not be blank" });
   }
 
   const text = rawText.trim();
-  const simplified = await completeText(
-    "Explain the supplied text simply in clear, plain language without changing its core meaning. Keep sentences short and digestible. Return only the explanation.",
-    text
-  );
+  const rewritten = await completeText(AUTISTIC_FRIENDLY_SYSTEM_PROMPT, text);
+
+  return res.json({
+    text: rewritten.trim(),
+    source: "autistic_friendly_rewriter",
+  });
+});
+
+app.post("/api/explain", async (req: Request, res: Response) => {
+  const rawText = req.body?.text || req.body?.input;
+  const mode = req.body?.mode || "plain_language";
+  if (!rawText || typeof rawText !== "string" || !rawText.trim()) {
+    return res.status(400).json({ detail: "text must not be blank" });
+  }
+
+  const text = rawText.trim();
+  let prompt =
+    "Explain the supplied text simply in clear, plain language without changing its core meaning. Keep sentences short and digestible. Return only the explanation.";
+
+  if (mode === "autistic_friendly" || mode === "literal_bullet") {
+    prompt = AUTISTIC_FRIENDLY_SYSTEM_PROMPT;
+  }
+
+  const simplified = await completeText(prompt, text);
 
   const formattedText = simplified.trim();
   return res.json({
@@ -2178,20 +2249,32 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 });
 
 // ----------------------------------------------------
-// FRONTEND STATIC FILE SERVING & SPA FALLBACK
+// FRONTEND SERVING (Vite Middleware in Dev / Static in Prod)
 // ----------------------------------------------------
-const distPath = path.join(process.cwd(), "frontend/dist");
-const legacyPath = path.join(process.cwd(), "frontend");
-const frontendPath = (fs.existsSync(distPath) && fs.existsSync(path.join(distPath, "index.html")))
-  ? distPath
-  : (fs.existsSync(legacyPath) ? legacyPath : path.resolve(__dirname, "../frontend"));
-app.use(express.static(frontendPath));
+export async function startServer() {
+  if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
+    const vite = await createViteServer({
+      root: path.resolve(process.cwd(), "frontend"),
+      server: { middlewareMode: true },
+      appType: "spa",
+      configFile: path.resolve(process.cwd(), "frontend/vite.config.ts"),
+    });
+    app.use(vite.middlewares);
+  } else {
+    const distPath = path.join(process.cwd(), "frontend/dist");
+    app.use(express.static(distPath));
+    app.get("*", (_req: Request, res: Response) => {
+      res.sendFile(path.join(distPath, "index.html"));
+    });
+  }
 
-app.get("*", (req: Request, res: Response) => {
-  res.sendFile(path.join(frontendPath, "index.html"));
-});
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`NeuroSafe server v2.0 running on http://0.0.0.0:${PORT}`);
+  });
+}
 
-// Start server
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`NeuroSafe server v2.0 running on http://0.0.0.0:${PORT}`);
+startServer().catch((err) => {
+  console.error("Failed to start server:", err);
+  process.exit(1);
 });

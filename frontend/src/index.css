@@ -61,6 +61,75 @@
   --app-contrast: 100%;
   --app-sepia: 0%;
   --app-hue: 0deg;
+
+  /* Vibrant, affirming, accessible theme tokens */
+  --coral-400: #f87171;
+  --coral-500: #ef4444;
+  --coral-600: #dc2626;
+  --coral-bg: #fff1f2;
+  --coral-border: #fecdd3;
+
+  --amber-400: #fbbf24;
+  --amber-500: #f59e0b;
+  --amber-600: #d97706;
+  --amber-bg: #fefce8;
+  --amber-border: #fef08a;
+
+  --emerald-400: #34d399;
+  --emerald-500: #10b981;
+  --emerald-600: #059669;
+  --emerald-bg: #ecfdf5;
+  --emerald-border: #a7f3d0;
+
+  --sky-400: #38bdf8;
+  --sky-500: #0ea5e9;
+  --sky-600: #0284c7;
+  --sky-bg: #f0f9ff;
+  --sky-border: #bae6fd;
+
+  --indigo-400: #818cf8;
+  --indigo-500: #6366f1;
+  --indigo-600: #4f46e5;
+  --indigo-bg: #eef2ff;
+  --indigo-border: #c7d2fe;
+
+  --violet-400: #a78bfa;
+  --violet-500: #8b5cf6;
+  --violet-600: #7c3aed;
+  --violet-bg: #f5f3ff;
+  --violet-border: #ddd6fe;
+
+  --rose-400: #fb7185;
+  --rose-500: #f43f5e;
+  --rose-600: #e11d48;
+  --rose-bg: #fff1f2;
+  --rose-border: #fecdd3;
+
+  --teal-400: #2dd4bf;
+  --teal-500: #14b8a6;
+  --teal-600: #0d9488;
+  --teal-bg: #f0fdfa;
+  --teal-border: #99f6e4;
+}
+
+/* Gentle, smooth view transitions */
+@keyframes gentleFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.gentle-view-transition {
+  animation: gentleFadeIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.gentle-tab-transition {
+  animation: gentleFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Brightness, contrast, and warmth filter applied directly to html element for universal viewport coverage */

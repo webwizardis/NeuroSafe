@@ -131,7 +131,8 @@ export const TaskBreakdown: React.FC<TaskBreakdownProps> = ({
     <div
       style={{
         background: "var(--card)",
-        border: "1px solid var(--line)",
+        border: "1px solid #fde68a",
+        borderTop: "4px solid #f59e0b",
         borderRadius: "var(--radius-lg)",
         padding: "24px",
         boxShadow: "var(--shadow-sm)"
@@ -140,7 +141,7 @@ export const TaskBreakdown: React.FC<TaskBreakdownProps> = ({
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: "1.4rem" }}>🎯</span>
-          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "var(--ink)" }}>
+          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "#b45309" }}>
             Executive Task Breakdown
           </h2>
         </div>
@@ -149,13 +150,13 @@ export const TaskBreakdown: React.FC<TaskBreakdownProps> = ({
             display: "inline-flex",
             alignItems: "center",
             gap: 6,
-            background: "var(--spring-mint-100)",
-            padding: "4px 10px",
+            background: "#fef3c7",
+            padding: "4px 12px",
             borderRadius: "var(--radius-pill)",
-            border: "1px solid var(--spring-mint-300)",
+            border: "1px solid #fde68a",
             fontSize: "0.8rem",
             fontWeight: 700,
-            color: "var(--spring-green-900)"
+            color: "#92400e"
           }}
         >
           <span>🏆</span>
@@ -258,7 +259,7 @@ export const TaskBreakdown: React.FC<TaskBreakdownProps> = ({
             style={{
               padding: "10px 18px",
               borderRadius: "var(--radius-md)",
-              background: "var(--spring-green-700)",
+              background: "#d97706",
               color: "#ffffff",
               border: "none",
               fontWeight: 600,
@@ -267,7 +268,8 @@ export const TaskBreakdown: React.FC<TaskBreakdownProps> = ({
               display: "inline-flex",
               alignItems: "center",
               gap: 8,
-              opacity: loading ? 0.7 : 1
+              opacity: loading ? 0.7 : 1,
+              boxShadow: "0 2px 6px rgba(217, 119, 6, 0.25)"
             }}
           >
             <span>🎯</span>

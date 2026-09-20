@@ -76,7 +76,8 @@ export const CalmMe: React.FC<CalmMeProps> = ({ onToast, lowStimulation }) => {
     <div
       style={{
         background: "var(--card)",
-        border: "1px solid var(--line)",
+        border: "1px solid #a7f3d0",
+        borderTop: "4px solid #059669",
         borderRadius: "var(--radius-lg)",
         padding: "24px",
         boxShadow: "var(--shadow-sm)"
@@ -94,7 +95,7 @@ export const CalmMe: React.FC<CalmMeProps> = ({ onToast, lowStimulation }) => {
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: "1.4rem" }}>🌿</span>
-          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "var(--ink)" }}>
+          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "#065f46" }}>
             Calm Me & Grounding Pause
           </h2>
         </div>

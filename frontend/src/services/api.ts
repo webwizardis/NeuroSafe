@@ -7,7 +7,8 @@ import {
   RouteResponse,
   CalmResponse,
   SosResponse,
-  OcrResponse
+  BuiltInImage,
+  BuiltInImagesResponse
 } from "../types";
 
 let sessionToken: string | null =
@@ -117,34 +118,19 @@ export const api = {
     return json("/api/profile/approve", { approved_settings: approvedSettings });
   },
 
-  // Multimodal OCR & Read
-  async readImage(formData: FormData): Promise<OcrResponse> {
-    return request<OcrResponse>("/api/read", {
-      method: "POST",
-      body: formData
-    });
+  // Built-in Images & Sensory Guides (replaces camera & OCR)
+  async getBuiltInImages(category?: string): Promise<BuiltInImagesResponse> {
+    const query = category && category !== "all" ? `?category=${encodeURIComponent(category)}` : "";
+    return request<BuiltInImagesResponse>(`/api/images${query}`);
   },
 
-  // Live Camera
-  async captureCamera(formData: FormData): Promise<OcrResponse> {
-    return request<OcrResponse>("/api/camera/capture", {
-      method: "POST",
-      body: formData
-    });
+  async getBuiltInImage(id: string): Promise<BuiltInImage> {
+    return request<BuiltInImage>(`/api/images/${encodeURIComponent(id)}`);
   },
 
-  async describeCamera(formData: FormData): Promise<{ description?: string; text?: string; [key: string]: any }> {
-    return request("/api/camera/describe", {
-      method: "POST",
-      body: formData
-    });
-  },
-
-  async analyzeCamera(formData: FormData): Promise<any> {
-    return request("/api/camera/analyze", {
-      method: "POST",
-      body: formData
-    });
+  // Read For Me - Autistic-Friendly Rewriter (replaces images)
+  async rewriteAutisticFriendly(text: string): Promise<{ text: string; [key: string]: any }> {
+    return json("/api/read-for-me", { text });
   },
 
   // Explain Simply

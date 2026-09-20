@@ -93,7 +93,8 @@ export const SayItForMe: React.FC<SayItForMeProps> = ({ onToast, readAloudDefaul
     <div
       style={{
         background: "var(--card)",
-        border: "1px solid var(--line)",
+        border: "1px solid #c7d2fe",
+        borderTop: "4px solid #6366f1",
         borderRadius: "var(--radius-lg)",
         padding: "24px",
         boxShadow: "var(--shadow-sm)"
@@ -102,7 +103,7 @@ export const SayItForMe: React.FC<SayItForMeProps> = ({ onToast, readAloudDefaul
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: "1.4rem" }}>💬</span>
-          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "var(--ink)" }}>
+          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "#4338ca" }}>
             Say It For Me
           </h2>
         </div>
@@ -111,13 +112,13 @@ export const SayItForMe: React.FC<SayItForMeProps> = ({ onToast, readAloudDefaul
             display: "inline-flex",
             alignItems: "center",
             gap: 6,
-            background: "var(--spring-mint-100)",
-            padding: "4px 10px",
+            background: "#eef2ff",
+            padding: "4px 12px",
             borderRadius: "var(--radius-pill)",
-            border: "1px solid var(--spring-mint-300)",
+            border: "1px solid #c7d2fe",
             fontSize: "0.8rem",
             fontWeight: 700,
-            color: "var(--spring-green-900)"
+            color: "#3730a3"
           }}
         >
           <span>🏅</span>
@@ -317,7 +318,7 @@ export const SayItForMe: React.FC<SayItForMeProps> = ({ onToast, readAloudDefaul
           style={{
             padding: "10px 18px",
             borderRadius: "var(--radius-md)",
-            background: "var(--spring-green-700)",
+            background: "#6366f1",
             color: "#ffffff",
             border: "none",
             fontWeight: 600,
@@ -326,7 +327,8 @@ export const SayItForMe: React.FC<SayItForMeProps> = ({ onToast, readAloudDefaul
             display: "inline-flex",
             alignItems: "center",
             gap: 8,
-            opacity: loading ? 0.7 : 1
+            opacity: loading ? 0.7 : 1,
+            boxShadow: "0 2px 6px rgba(99, 102, 241, 0.25)"
           }}
         >
           <span>✨</span>
@@ -339,8 +341,8 @@ export const SayItForMe: React.FC<SayItForMeProps> = ({ onToast, readAloudDefaul
           style={{
             marginTop: 18,
             padding: "16px",
-            background: "var(--paper)",
-            border: "1px solid var(--line)",
+            background: "#eef2ff",
+            border: "1px solid #c7d2fe",
             borderRadius: "var(--radius-md)"
           }}
         >

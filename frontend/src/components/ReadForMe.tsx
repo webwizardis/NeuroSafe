@@ -1,211 +1,121 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import { api } from "../services/api";
 import { speak, stopSpeaking } from "../utils/speech";
+import { ScreenComfortTool } from "./ScreenComfortTool";
 
 interface ReadForMeProps {
   onToast: (message: string, type?: "info" | "success" | "error") => void;
   readAloudDefault?: boolean;
 }
 
+const PRESET_EXAMPLES = [
+  {
+    label: "Work Email (Idioms & Sarcasm)",
+    text: "Hey team, just circling back on the deliverables. It’s not rocket science, but if we don't hit the ground running, we'll be behind the eight ball. Don't sweat it though, just touch base ASAP with your slide deck."
+  },
+  {
+    label: "Vague Request (Unclear Deadline)",
+    text: "Could you take a crack at reviewing the budget spreadsheet whenever you get a chance? No rush at all, but the sooner the better would be fantastic. Let me know if you run into any road blocks."
+  },
+  {
+    label: "Dense Policy / Medical Notice",
+    text: "Please be advised that your upcoming scheduled consultation requires completion of the intake questionnaires prior to arrival. Failure to produce required documentation will necessitate rescheduling at subsequent clinic availability."
+  },
+  {
+    label: "Metaphorical Feedback",
+    text: "Your presentation today was a double-edged sword. You hit a home run on the metrics, but you missed the forest for the trees on the big picture. Let's touch base next week to align our synergy."
+  }
+];
+
 export const ReadForMe: React.FC<ReadForMeProps> = ({ onToast, readAloudDefault }) => {
-  const [activeTab, setActiveTab] = useState<"camera" | "upload">("camera");
-  const [cameraActive, setCameraActive] = useState(false);
-  const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
-  const [cameraError, setCameraError] = useState<string | null>(null);
-  const [loadingAction, setLoadingAction] = useState<string | null>(null);
-  const [resultText, setResultText] = useState<string | null>(null);
-  const [plainSummary, setPlainSummary] = useState<string | null>(null);
-  const [capturedPreview, setCapturedPreview] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"rewriter" | "screen_comfort">("rewriter");
+  const [inputText, setInputText] = useState("");
+  const [rewrittenText, setRewrittenText] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [showOriginal, setShowOriginal] = useState(false);
+  const [fontSizeLevel, setFontSizeLevel] = useState<"normal" | "large" | "xlarge">("normal");
 
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const mobileInputRef = useRef<HTMLInputElement>(null);
-
-  const startCamera = async () => {
-    setCameraError(null);
-    stopCamera();
-
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setCameraError("Camera stream not available in this browser context. Please use File Upload.");
+  // Handle Autistic-Friendly Rewrite
+  const handleRewrite = async (textToProcess?: string) => {
+    const text = (textToProcess || inputText).trim();
+    if (!text) {
+      onToast("Please enter or paste text to rewrite.", "info");
       return;
     }
 
+    setLoading(true);
+    stopSpeaking();
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: facingMode },
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        },
-        audio: false
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-      setCameraActive(true);
-    } catch (err: any) {
-      setCameraError(err.message || "Could not access camera device.");
-      setCameraActive(false);
-    }
-  };
+      const data = await api.rewriteAutisticFriendly(text);
+      const cleanResult = data.text?.trim() || "";
+      setRewrittenText(cleanResult);
+      onToast("Rewritten for easy reading!", "success");
 
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-    setCameraActive(false);
-  };
-
-  useEffect(() => {
-    if (activeTab === "camera") {
-      startCamera();
-    } else {
-      stopCamera();
-    }
-    return () => {
-      stopCamera();
-    };
-  }, [activeTab, facingMode]);
-
-  const toggleCameraFacing = () => {
-    setFacingMode((prev) => (prev === "environment" ? "user" : "environment"));
-  };
-
-  const captureFrameBlob = (): Promise<Blob | null> => {
-    return new Promise((resolve) => {
-      const video = videoRef.current;
-      if (!video || video.videoWidth === 0) {
-        resolve(null);
-        return;
-      }
-      const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        resolve(null);
-        return;
-      }
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
-      setCapturedPreview(dataUrl);
-
-      canvas.toBlob((blob) => {
-        resolve(blob);
-      }, "image/jpeg", 0.92);
-    });
-  };
-
-  const handleCaptureOcr = async () => {
-    setLoadingAction("Reading text with Gemini OCR…");
-    try {
-      let blob = await captureFrameBlob();
-      if (!blob && mobileInputRef.current) {
-        mobileInputRef.current.click();
-        return;
-      }
-      if (!blob) {
-        throw new Error("Unable to capture camera frame. Please try uploading an image.");
-      }
-
-      const form = new FormData();
-      form.append("image", blob, "camera_capture.jpg");
-
-      const res = await api.captureCamera(form);
-      const text = res.text || "No text detected in capture.";
-      setResultText(text);
-      setPlainSummary(res.plain_summary || null);
-      onToast("Text extracted successfully!", "success");
-
-      if (readAloudDefault && text) {
-        speak(text);
+      if (readAloudDefault && cleanResult) {
+        speak(cleanResult);
       }
     } catch (err: any) {
-      onToast(err.message || "Capture OCR failed", "error");
+      onToast(err.message || "Could not rewrite text. Please check connection.", "error");
     } finally {
-      setLoadingAction(null);
-    }
-  };
-
-  const handleDescribeScene = async () => {
-    setLoadingAction("Analyzing surroundings & sensory safety…");
-    try {
-      const blob = await captureFrameBlob();
-      if (!blob) {
-        throw new Error("Please ensure camera is active or select an image.");
-      }
-
-      const form = new FormData();
-      form.append("image", blob, "scene_frame.jpg");
-
-      const res = await api.describeCamera(form);
-      const desc = res.description || res.text || "No surroundings description generated.";
-      setResultText(desc);
-      setPlainSummary(null);
-      onToast("Scene analyzed!", "success");
-
-      if (readAloudDefault && desc) {
-        speak(desc);
-      }
-    } catch (err: any) {
-      onToast(err.message || "Describe scene failed", "error");
-    } finally {
-      setLoadingAction(null);
-    }
-  };
-
-  const handleFileUpload = async (file: File) => {
-    setCapturedPreview(URL.createObjectURL(file));
-    setLoadingAction("Transcribing uploaded document with Gemini OCR…");
-    try {
-      const form = new FormData();
-      form.append("image", file);
-
-      const res = await api.readImage(form);
-      const text = res.text || "No readable text found in document.";
-      setResultText(text);
-      setPlainSummary(res.plain_summary || null);
-      onToast("Document transcribed!", "success");
-
-      if (readAloudDefault && text) {
-        speak(text);
-      }
-    } catch (err: any) {
-      onToast(err.message || "Document read error", "error");
-    } finally {
-      setLoadingAction(null);
+      setLoading(false);
     }
   };
 
   const handleCopy = () => {
-    if (!resultText) return;
-    navigator.clipboard.writeText(
-      plainSummary ? `${resultText}\n\nSummary: ${plainSummary}` : resultText
-    );
-    onToast("Text copied to clipboard! 📋", "success");
+    if (!rewrittenText) return;
+    navigator.clipboard.writeText(rewrittenText);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    onToast("Rewritten text copied to clipboard! 📋", "success");
   };
 
   const handleSpeak = () => {
-    if (!resultText) return;
-    speak(plainSummary ? `Summary: ${plainSummary}. Full text: ${resultText}` : resultText);
-    onToast("🔊 Reading aloud…", "info");
+    if (!rewrittenText) return;
+    speak(rewrittenText);
+    onToast("🔊 Reading rewritten text aloud…", "info");
   };
+
+  const handleClear = () => {
+    setInputText("");
+    setRewrittenText(null);
+    stopSpeaking();
+    onToast("Cleared input.", "info");
+  };
+
+  const handleSelectPreset = (exampleText: string) => {
+    setInputText(exampleText);
+    handleRewrite(exampleText);
+  };
+
+  // Split rewritten text into lines/headings/bullets
+  const parsedLines = rewrittenText
+    ? rewrittenText
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+    : [];
+
+  const fontSizeClass =
+    fontSizeLevel === "xlarge" ? "1.18rem" : fontSizeLevel === "large" ? "1.06rem" : "0.95rem";
+  const lineHeightVal = fontSizeLevel === "xlarge" ? 1.85 : fontSizeLevel === "large" ? 1.75 : 1.65;
 
   return (
     <div
+      id="read-for-me-container"
       style={{
         background: "var(--card)",
-        border: "1px solid var(--line)",
+        border: "1px solid #a7f3d0",
+        borderTop: "4px solid #059669",
         borderRadius: "var(--radius-lg)",
         padding: "24px",
-        boxShadow: "var(--shadow-sm)"
+        boxShadow: "var(--shadow-sm)",
+        display: "flex",
+        flexDirection: "column",
+        gap: 18
       }}
     >
-      {/* Title Bar */}
+      {/* Top Header */}
       <div
         style={{
           display: "flex",
@@ -213,466 +123,512 @@ export const ReadForMe: React.FC<ReadForMeProps> = ({ onToast, readAloudDefault 
           alignItems: "center",
           flexWrap: "wrap",
           gap: 12,
-          marginBottom: 16
+          borderBottom: "1px solid var(--line)",
+          paddingBottom: 16
         }}
       >
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: "1.4rem" }}>📖</span>
-            <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "var(--ink)" }}>
-              Read for Me & Live OCR
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: "1.45rem" }}>📖</span>
+            <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "#065f46" }}>
+              Read for Me
             </h2>
           </div>
           <p
             style={{
               margin: "4px 0 0 0",
-              fontSize: "0.88rem",
-              color: "var(--ink-secondary)"
+              fontSize: "0.86rem",
+              color: "var(--ink-secondary)",
+              maxWidth: "680px",
+              lineHeight: 1.45
             }}
           >
-            Instantly read medication labels, dense paperwork, room signs, or menus aloud.
+            Rewrites confusing or overloaded text for easy autistic-friendly reading. Uses short literal sentences, simple words, clear headings, bullet points, and explicit instructions with zero idioms, sarcasm, ambiguity, or visual clutter.
           </p>
         </div>
 
-        {/* Tab switch */}
-        <div
-          style={{
-            display: "flex",
-            gap: 4,
-            background: "var(--paper)",
-            padding: 4,
-            borderRadius: "var(--radius-md)"
-          }}
-        >
+        <div style={{ display: "flex", gap: 6, background: "var(--paper)", padding: 4, borderRadius: "var(--radius-md)", border: "1px solid var(--line)" }}>
           <button
             type="button"
-            onClick={() => setActiveTab("camera")}
+            onClick={() => setActiveTab("rewriter")}
             style={{
-              padding: "6px 14px",
+              padding: "7px 14px",
               borderRadius: "var(--radius-sm)",
               border: "none",
-              fontSize: "0.85rem",
-              fontWeight: 600,
+              fontSize: "0.84rem",
+              fontWeight: 700,
               cursor: "pointer",
-              background: activeTab === "camera" ? "var(--card)" : "transparent",
-              color: activeTab === "camera" ? "var(--spring-green-900)" : "var(--ink-secondary)",
-              boxShadow: activeTab === "camera" ? "0 2px 6px rgba(0,0,0,0.05)" : "none"
+              background: activeTab === "rewriter" ? "var(--card)" : "transparent",
+              color: activeTab === "rewriter" ? "var(--spring-green-900)" : "var(--ink-secondary)",
+              boxShadow: activeTab === "rewriter" ? "0 2px 4px rgba(0,0,0,0.06)" : "none"
             }}
           >
-            📷 Live Camera
+            <span>✍️ Text Rewriter</span>
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab("upload")}
+            onClick={() => setActiveTab("screen_comfort")}
             style={{
-              padding: "6px 14px",
+              padding: "7px 14px",
               borderRadius: "var(--radius-sm)",
               border: "none",
-              fontSize: "0.85rem",
-              fontWeight: 600,
+              fontSize: "0.84rem",
+              fontWeight: 700,
               cursor: "pointer",
-              background: activeTab === "upload" ? "var(--card)" : "transparent",
-              color: activeTab === "upload" ? "var(--spring-green-900)" : "var(--ink-secondary)",
-              boxShadow: activeTab === "upload" ? "0 2px 6px rgba(0,0,0,0.05)" : "none"
+              background: activeTab === "screen_comfort" ? "var(--card)" : "transparent",
+              color: activeTab === "screen_comfort" ? "var(--spring-green-900)" : "var(--ink-secondary)",
+              boxShadow: activeTab === "screen_comfort" ? "0 2px 4px rgba(0,0,0,0.06)" : "none"
             }}
           >
-            📁 Upload Image
+            <span>🖥️ Screen Comfort</span>
           </button>
         </div>
       </div>
 
-      {/* Hidden Mobile camera fallback */}
-      <input
-        ref={mobileInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        style={{ display: "none" }}
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) handleFileUpload(file);
-        }}
-      />
+      {activeTab === "rewriter" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* Preset Example Buttons */}
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <span style={{ fontSize: "0.8rem", color: "var(--ink-secondary)", fontWeight: 600 }}>
+                Try an example with idioms, ambiguity, or clutter:
+              </span>
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {PRESET_EXAMPLES.map((ex) => (
+                <button
+                  key={ex.label}
+                  type="button"
+                  onClick={() => handleSelectPreset(ex.text)}
+                  style={{
+                    padding: "5px 12px",
+                    borderRadius: "var(--radius-pill)",
+                    background: "var(--paper)",
+                    border: "1px solid var(--line)",
+                    color: "var(--ink)",
+                    fontSize: "0.8rem",
+                    fontWeight: 500,
+                    cursor: "pointer",
+                    transition: "all 0.15s ease"
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--spring-green-700)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--line)")}
+                >
+                  {ex.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
-      {/* Active Tab Content */}
-      {activeTab === "camera" ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {/* Camera Viewfinder */}
+          {/* Textarea Input Card */}
           <div
             style={{
-              position: "relative",
-              width: "100%",
-              height: "280px",
-              background: "#111815",
+              background: "var(--paper)",
+              border: "1px solid var(--line)",
               borderRadius: "var(--radius-md)",
-              overflow: "hidden",
+              padding: "14px",
               display: "flex",
-              alignItems: "center",
-              justifyContent: "center"
+              flexDirection: "column",
+              gap: 10
             }}
           >
-            {cameraActive ? (
-              <video
-                ref={videoRef}
-                playsInline
-                muted
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover"
-                }}
-              />
-            ) : (
-              <div style={{ textAlign: "center", color: "#eef5f1", padding: 20 }}>
-                <p style={{ margin: "0 0 10px 0", fontSize: "0.95rem" }}>
-                  {cameraError || "Camera is inactive."}
-                </p>
-                <button
-                  type="button"
-                  onClick={startCamera}
-                  style={{
-                    padding: "8px 16px",
-                    borderRadius: "var(--radius-md)",
-                    background: "var(--spring-green-700)",
-                    color: "#fff",
-                    border: "none",
-                    fontWeight: 600,
-                    cursor: "pointer"
-                  }}
-                >
-                  Start Camera
-                </button>
-              </div>
-            )}
-
-            {/* Viewfinder Target Reticle */}
-            {cameraActive && (
-              <div
-                style={{
-                  position: "absolute",
-                  inset: "24px",
-                  border: "2px dashed rgba(255,255,255,0.45)",
-                  borderRadius: "var(--radius-md)",
-                  pointerEvents: "none",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center"
-                }}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <label
+                htmlFor="autistic-input-text"
+                style={{ fontSize: "0.86rem", fontWeight: 700, color: "var(--ink)" }}
               >
-                <span
-                  style={{
-                    background: "rgba(0,0,0,0.5)",
-                    color: "#fff",
-                    padding: "4px 10px",
-                    borderRadius: "var(--radius-pill)",
-                    fontSize: "0.78rem"
-                  }}
-                >
-                  Align text or room signs inside
+                Paste original text to rewrite:
+              </label>
+              {inputText.length > 0 && (
+                <span style={{ fontSize: "0.78rem", color: "var(--ink-secondary)" }}>
+                  {inputText.length} characters ({inputText.split(/\s+/).filter(Boolean).length} words)
                 </span>
-              </div>
-            )}
+              )}
+            </div>
 
-            {/* Camera Floating Controls */}
-            {cameraActive && (
-              <div
-                style={{
-                  position: "absolute",
-                  bottom: 12,
-                  right: 12,
-                  display: "flex",
-                  gap: 8
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={toggleCameraFacing}
-                  title="Switch Front/Back Camera"
-                  style={{
-                    background: "rgba(0,0,0,0.65)",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: "var(--radius-pill)",
-                    padding: "6px 12px",
-                    fontSize: "0.8rem",
-                    fontWeight: 600,
-                    cursor: "pointer"
-                  }}
-                >
-                  🔄 Flip
-                </button>
-                <button
-                  type="button"
-                  onClick={stopCamera}
-                  title="Pause Camera"
-                  style={{
-                    background: "rgba(0,0,0,0.65)",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: "var(--radius-pill)",
-                    padding: "6px 12px",
-                    fontSize: "0.8rem",
-                    fontWeight: 600,
-                    cursor: "pointer"
-                  }}
-                >
-                  ⏸ Pause
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Action Buttons */}
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <button
-              type="button"
-              onClick={handleCaptureOcr}
-              disabled={Boolean(loadingAction)}
+            <textarea
+              id="autistic-input-text"
+              rows={4}
+              placeholder="Paste email, message, instructions, or article here…"
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
               style={{
-                flex: 1,
-                padding: "12px 18px",
-                borderRadius: "var(--radius-md)",
-                background: "var(--spring-green-700)",
-                color: "#ffffff",
-                border: "none",
-                fontWeight: 600,
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                fontSize: "0.95rem"
-              }}
-            >
-              <span>📸</span>
-              <span>Capture & Read Text</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleDescribeScene}
-              disabled={Boolean(loadingAction)}
-              style={{
-                padding: "12px 18px",
-                borderRadius: "var(--radius-md)",
-                background: "var(--peach-100)",
-                color: "var(--peach-900)",
-                border: "1px solid var(--peach-300)",
-                fontWeight: 600,
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                fontSize: "0.95rem"
-              }}
-            >
-              <span>👁️</span>
-              <span>Describe Space</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => mobileInputRef.current?.click()}
-              style={{
-                padding: "12px 16px",
-                borderRadius: "var(--radius-md)",
-                background: "transparent",
+                width: "100%",
+                padding: "12px 14px",
+                borderRadius: "var(--radius-sm)",
                 border: "1px solid var(--line)",
-                color: "var(--ink-secondary)",
-                fontWeight: 600,
-                cursor: "pointer",
-                fontSize: "0.9rem"
-              }}
-            >
-              📱 Phone Camera
-            </button>
-          </div>
-        </div>
-      ) : (
-        /* Upload Area */
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <div
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              const file = e.dataTransfer.files?.[0];
-              if (file) handleFileUpload(file);
-            }}
-            onClick={() => fileInputRef.current?.click()}
-            style={{
-              border: "2px dashed var(--line)",
-              borderRadius: "var(--radius-md)",
-              padding: "36px 20px",
-              textAlign: "center",
-              cursor: "pointer",
-              background: "var(--paper-peach)",
-              transition: "border-color 0.15s ease"
-            }}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*,.pdf"
-              style={{ display: "none" }}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handleFileUpload(file);
+                background: "var(--card)",
+                color: "var(--ink)",
+                fontSize: "0.94rem",
+                lineHeight: 1.55,
+                resize: "vertical",
+                minHeight: 100,
+                outline: "none",
+                fontFamily: "inherit"
               }}
             />
-            <span style={{ fontSize: "2rem", display: "block", marginBottom: 8 }}>📄</span>
-            <strong style={{ fontSize: "1rem", color: "var(--ink)" }}>
-              Choose or drag & drop an image or document
-            </strong>
-            <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "var(--ink-secondary)" }}>
-              PNG, JPG, WebP, or screenshots of forms, letters, and labels
-            </p>
-          </div>
-        </div>
-      )}
 
-      {/* Captured Preview & Loading Status */}
-      {loadingAction && (
-        <div
-          role="status"
-          style={{
-            marginTop: 16,
-            padding: "12px 16px",
-            background: "var(--spring-mint-100)",
-            color: "var(--spring-green-900)",
-            borderRadius: "var(--radius-md)",
-            fontSize: "0.92rem",
-            fontWeight: 600,
-            display: "flex",
-            alignItems: "center",
-            gap: 10
-          }}
-        >
-          <span style={{ animation: "pulse 1.5s infinite" }}>✨</span>
-          <span>{loadingAction}</span>
-        </div>
-      )}
-
-      {/* Results Display */}
-      {resultText && (
-        <div
-          style={{
-            marginTop: 20,
-            padding: "18px",
-            borderRadius: "var(--radius-md)",
-            background: "var(--paper)",
-            border: "1px solid var(--line)"
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 12,
-              flexWrap: "wrap",
-              gap: 8
-            }}
-          >
-            <strong style={{ fontSize: "0.95rem", color: "var(--ink)" }}>
-              Extracted Information
-            </strong>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button
-                type="button"
-                onClick={handleSpeak}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "var(--radius-pill)",
-                  background: "var(--peach-200)",
-                  color: "var(--peach-900)",
-                  border: "none",
-                  fontWeight: 600,
-                  fontSize: "0.82rem",
-                  cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6
-                }}
-              >
-                <span>🔊</span>
-                <span>Read Aloud</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleCopy}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: "var(--radius-pill)",
-                  background: "var(--card)",
-                  color: "var(--ink)",
-                  border: "1px solid var(--line)",
-                  fontWeight: 600,
-                  fontSize: "0.82rem",
-                  cursor: "pointer"
-                }}
-              >
-                📋 Copy
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  stopSpeaking();
-                  setResultText(null);
-                  setPlainSummary(null);
-                  setCapturedPreview(null);
-                }}
-                style={{
-                  padding: "6px 10px",
-                  borderRadius: "var(--radius-pill)",
-                  background: "transparent",
-                  border: "none",
-                  color: "var(--ink-secondary)",
-                  fontSize: "0.82rem",
-                  cursor: "pointer"
-                }}
-              >
-                Clear
-              </button>
-            </div>
-          </div>
-
-          {plainSummary && (
+            {/* Action Bar */}
             <div
               style={{
-                marginBottom: 14,
-                padding: "12px 14px",
-                background: "var(--peach-100)",
-                border: "1px solid var(--peach-200)",
-                borderRadius: "var(--radius-sm)"
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 10,
+                marginTop: 4
               }}
             >
-              <strong style={{ display: "block", fontSize: "0.86rem", color: "var(--peach-900)", marginBottom: 4 }}>
-                📌 Plain Language Summary:
-              </strong>
-              <p style={{ margin: 0, fontSize: "0.92rem", color: "var(--ink)", lineHeight: 1.5 }}>
-                {plainSummary}
-              </p>
+              <div style={{ display: "flex", gap: 8 }}>
+                {inputText.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleClear}
+                    style={{
+                      padding: "8px 14px",
+                      borderRadius: "var(--radius-sm)",
+                      background: "transparent",
+                      border: "1px solid var(--line)",
+                      color: "var(--ink-secondary)",
+                      fontSize: "0.82rem",
+                      fontWeight: 600,
+                      cursor: "pointer"
+                    }}
+                  >
+                    Clear Input
+                  </button>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleRewrite()}
+                disabled={loading || !inputText.trim()}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: "var(--radius-pill)",
+                  background: "var(--spring-green-700)",
+                  color: "#ffffff",
+                  border: "none",
+                  fontWeight: 700,
+                  fontSize: "0.92rem",
+                  cursor: loading || !inputText.trim() ? "not-allowed" : "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  opacity: loading || !inputText.trim() ? 0.6 : 1,
+                  boxShadow: "0 2px 8px rgba(33, 107, 84, 0.25)"
+                }}
+              >
+                <span>{loading ? "⏳" : "✨"}</span>
+                <span>{loading ? "Rewriting text…" : "Rewrite for Easy Reading"}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Rewritten Output Section */}
+          {rewrittenText && (
+            <div
+              id="autistic-rewritten-output"
+              style={{
+                background: "var(--paper)",
+                border: "2px solid var(--spring-green-700)",
+                borderRadius: "var(--radius-lg)",
+                padding: "20px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 14,
+                boxShadow: "0 4px 14px rgba(0,0,0,0.04)"
+              }}
+            >
+              {/* Output Top Utility Bar */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 10,
+                  borderBottom: "1px solid var(--line)",
+                  paddingBottom: 12
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: "1.1rem" }}>✅</span>
+                  <strong style={{ fontSize: "0.98rem", color: "var(--ink)" }}>
+                    Rewritten Text (Literal & Structured)
+                  </strong>
+                </div>
+
+                {/* Font and Controls */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  {/* Font Size Selector */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, background: "var(--card)", padding: "3px 6px", borderRadius: "var(--radius-sm)", border: "1px solid var(--line)" }}>
+                    <span style={{ fontSize: "0.75rem", color: "var(--ink-secondary)", fontWeight: 600 }}>Size:</span>
+                    <button
+                      type="button"
+                      onClick={() => setFontSizeLevel("normal")}
+                      style={{
+                        padding: "2px 6px",
+                        border: "none",
+                        borderRadius: "3px",
+                        fontSize: "0.78rem",
+                        fontWeight: fontSizeLevel === "normal" ? 700 : 400,
+                        background: fontSizeLevel === "normal" ? "var(--spring-mint-200)" : "transparent",
+                        color: fontSizeLevel === "normal" ? "var(--spring-green-900)" : "var(--ink)",
+                        cursor: "pointer"
+                      }}
+                    >
+                      A
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFontSizeLevel("large")}
+                      style={{
+                        padding: "2px 6px",
+                        border: "none",
+                        borderRadius: "3px",
+                        fontSize: "0.85rem",
+                        fontWeight: fontSizeLevel === "large" ? 700 : 400,
+                        background: fontSizeLevel === "large" ? "var(--spring-mint-200)" : "transparent",
+                        color: fontSizeLevel === "large" ? "var(--spring-green-900)" : "var(--ink)",
+                        cursor: "pointer"
+                      }}
+                    >
+                      A+
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFontSizeLevel("xlarge")}
+                      style={{
+                        padding: "2px 6px",
+                        border: "none",
+                        borderRadius: "3px",
+                        fontSize: "0.92rem",
+                        fontWeight: fontSizeLevel === "xlarge" ? 700 : 400,
+                        background: fontSizeLevel === "xlarge" ? "var(--spring-mint-200)" : "transparent",
+                        color: fontSizeLevel === "xlarge" ? "var(--spring-green-900)" : "var(--ink)",
+                        cursor: "pointer"
+                      }}
+                    >
+                      A++
+                    </button>
+                  </div>
+
+                  {/* Toggle Original Text Comparison */}
+                  <button
+                    type="button"
+                    onClick={() => setShowOriginal(!showOriginal)}
+                    style={{
+                      padding: "5px 10px",
+                      borderRadius: "var(--radius-sm)",
+                      border: "1px solid var(--line)",
+                      background: showOriginal ? "var(--paper-peach)" : "var(--card)",
+                      color: showOriginal ? "var(--peach-900)" : "var(--ink-secondary)",
+                      fontSize: "0.8rem",
+                      fontWeight: 600,
+                      cursor: "pointer"
+                    }}
+                  >
+                    {showOriginal ? "Hide Original" : "Show Original"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Side-by-Side Original (if toggled) */}
+              {showOriginal && (
+                <div
+                  style={{
+                    padding: "12px 14px",
+                    background: "var(--paper-peach)",
+                    border: "1px solid var(--peach-200)",
+                    borderRadius: "var(--radius-md)",
+                    fontSize: "0.88rem",
+                    color: "var(--peach-900)",
+                    lineHeight: 1.55
+                  }}
+                >
+                  <strong style={{ display: "block", marginBottom: 4, fontSize: "0.8rem" }}>
+                    Original Text (Raw Input):
+                  </strong>
+                  {inputText}
+                </div>
+              )}
+
+              {/* Content Body: Rendered with Clear Headings and Bullet Points */}
+              <div
+                style={{
+                  background: "var(--card)",
+                  border: "1px solid var(--line)",
+                  borderRadius: "var(--radius-md)",
+                  padding: "18px 20px",
+                  fontSize: fontSizeClass,
+                  lineHeight: lineHeightVal,
+                  color: "var(--ink)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 10
+                }}
+              >
+                {parsedLines.map((line, idx) => {
+                  const isHeading =
+                    line.startsWith("#") ||
+                    line.endsWith(":") ||
+                    line.toLowerCase().startsWith("what this means") ||
+                    line.toLowerCase().startsWith("what you need to do") ||
+                    line.toLowerCase().startsWith("instructions") ||
+                    line.toLowerCase().startsWith("summary");
+
+                  const isBullet =
+                    line.startsWith("•") ||
+                    line.startsWith("-") ||
+                    line.startsWith("*") ||
+                    /^\d+[\.\)]/.test(line);
+
+                  const cleanText = line.replace(/^[#\*\-•]+\s*/, "").replace(/^\d+[\.\)]\s*/, "");
+
+                  if (isHeading) {
+                    return (
+                      <div
+                        key={idx}
+                        style={{
+                          fontSize: fontSizeLevel === "xlarge" ? "1.24rem" : "1.1rem",
+                          fontWeight: 700,
+                          color: "var(--spring-green-900)",
+                          marginTop: idx > 0 ? 12 : 0,
+                          marginBottom: 4,
+                          paddingBottom: 4,
+                          borderBottom: "1px solid var(--line)"
+                        }}
+                      >
+                        {cleanText}
+                      </div>
+                    );
+                  }
+
+                  if (isBullet) {
+                    return (
+                      <div
+                        key={idx}
+                        style={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: 10,
+                          padding: "4px 8px"
+                        }}
+                      >
+                        <span
+                          style={{
+                            color: "var(--spring-green-700)",
+                            fontWeight: 700,
+                            userSelect: "none"
+                          }}
+                        >
+                          •
+                        </span>
+                        <span style={{ flex: 1 }}>{cleanText}</span>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <p
+                      key={idx}
+                      style={{
+                        margin: 0,
+                        padding: "4px 8px"
+                      }}
+                    >
+                      {line}
+                    </p>
+                  );
+                })}
+              </div>
+
+              {/* Action Buttons Row */}
+              <div
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  flexWrap: "wrap",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  borderTop: "1px solid var(--line)",
+                  paddingTop: 14
+                }}
+              >
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    onClick={handleSpeak}
+                    style={{
+                      padding: "8px 16px",
+                      borderRadius: "var(--radius-pill)",
+                      background: "var(--spring-green-700)",
+                      color: "#ffffff",
+                      border: "none",
+                      fontWeight: 700,
+                      fontSize: "0.88rem",
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6
+                    }}
+                  >
+                    <span>🔊</span>
+                    <span>Read Aloud</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => stopSpeaking()}
+                    style={{
+                      padding: "8px 14px",
+                      borderRadius: "var(--radius-pill)",
+                      background: "var(--card)",
+                      border: "1px solid var(--line)",
+                      color: "var(--ink-secondary)",
+                      fontWeight: 600,
+                      fontSize: "0.84rem",
+                      cursor: "pointer"
+                    }}
+                  >
+                    Stop Audio
+                  </button>
+                </div>
+
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={handleCopy}
+                    style={{
+                      padding: "8px 16px",
+                      borderRadius: "var(--radius-pill)",
+                      background: "var(--card)",
+                      border: "1px solid var(--line)",
+                      color: "var(--ink)",
+                      fontWeight: 600,
+                      fontSize: "0.86rem",
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6
+                    }}
+                  >
+                    <span>📋</span>
+                    <span>{copied ? "Copied!" : "Copy Rewritten Text"}</span>
+                  </button>
+                </div>
+              </div>
             </div>
           )}
-
-          <div
-            style={{
-              maxHeight: "240px",
-              overflowY: "auto",
-              whiteSpace: "pre-wrap",
-              fontSize: "0.92rem",
-              lineHeight: 1.6,
-              color: "var(--ink)",
-              padding: "10px",
-              background: "var(--card)",
-              borderRadius: "var(--radius-sm)",
-              border: "1px solid var(--line)"
-            }}
-          >
-            {resultText}
-          </div>
         </div>
       )}
+
+      {/* Screen Comfort Tool */}
+      {activeTab === "screen_comfort" && <ScreenComfortTool onToast={onToast} />}
     </div>
   );
 };
+
+export default ReadForMe;

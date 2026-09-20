@@ -65,7 +65,8 @@ export const ExplainSimply: React.FC<ExplainSimplyProps> = ({ onToast, readAloud
     <div
       style={{
         background: "var(--card)",
-        border: "1px solid var(--line)",
+        border: "1px solid #99f6e4",
+        borderTop: "4px solid #0d9488",
         borderRadius: "var(--radius-lg)",
         padding: "24px",
         boxShadow: "var(--shadow-sm)"
@@ -73,7 +74,7 @@ export const ExplainSimply: React.FC<ExplainSimplyProps> = ({ onToast, readAloud
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
         <span style={{ fontSize: "1.4rem" }}>💡</span>
-        <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "var(--ink)" }}>
+        <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "#0f766e" }}>
           Explain Simply
         </h2>
       </div>
@@ -179,7 +180,7 @@ export const ExplainSimply: React.FC<ExplainSimplyProps> = ({ onToast, readAloud
           style={{
             padding: "10px 18px",
             borderRadius: "var(--radius-md)",
-            background: "var(--spring-green-700)",
+            background: "#0d9488",
             color: "#ffffff",
             border: "none",
             fontWeight: 600,
@@ -188,7 +189,8 @@ export const ExplainSimply: React.FC<ExplainSimplyProps> = ({ onToast, readAloud
             display: "inline-flex",
             alignItems: "center",
             gap: 8,
-            opacity: loading ? 0.7 : 1
+            opacity: loading ? 0.7 : 1,
+            boxShadow: "0 2px 6px rgba(13, 148, 136, 0.25)"
           }}
         >
           <span>✨</span>
@@ -202,8 +204,8 @@ export const ExplainSimply: React.FC<ExplainSimplyProps> = ({ onToast, readAloud
           style={{
             marginTop: 18,
             padding: "16px",
-            background: "var(--spring-mint-100)",
-            border: "1px solid var(--spring-mint-300)",
+            background: "#f0fdfa",
+            border: "1px solid #99f6e4",
             borderRadius: "var(--radius-md)"
           }}
         >
@@ -215,7 +217,7 @@ export const ExplainSimply: React.FC<ExplainSimplyProps> = ({ onToast, readAloud
               marginBottom: 10
             }}
           >
-            <strong style={{ fontSize: "0.9rem", color: "var(--spring-green-900)" }}>
+            <strong style={{ fontSize: "0.9rem", color: "#0f766e" }}>
               Clear Meaning:
             </strong>
             <div style={{ display: "flex", gap: 6 }}>
