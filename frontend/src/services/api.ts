@@ -199,11 +199,12 @@ export const api = {
   },
 
   // SOS Confirmation
-  async sendSos(message: string, contact: string, confirmed: boolean = true): Promise<SosResponse> {
+  async sendSos(message: string, contact: string, confirmed: boolean = true, location?: any): Promise<SosResponse> {
     return json<SosResponse>("/api/sos", {
       message,
       contact,
-      confirmed
+      confirmed,
+      location
     });
   }
 };

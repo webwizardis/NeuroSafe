@@ -84,11 +84,20 @@ export interface CalmResponse {
   disclaimer: string;
 }
 
+export interface SosLocationData {
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+  timestamp?: number;
+  mapsUrl: string;
+}
+
 export interface SosResponse {
   status: string;
   timestamp: string;
   message: string;
   contact: string;
+  location?: SosLocationData | null;
   [key: string]: any;
 }
 

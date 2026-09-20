@@ -67,12 +67,15 @@ export const ProfileRecommender: React.FC<ProfileRecommenderProps> = ({
 
   return (
     <div
+      id="box-profile-recommender"
       style={{
         background: "var(--card)",
         border: "1px solid var(--line)",
         borderRadius: "var(--radius-lg)",
         padding: "24px",
-        boxShadow: "var(--shadow-sm)"
+        boxShadow: "var(--shadow-sm)",
+        display: "flex",
+        flexDirection: "column"
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>

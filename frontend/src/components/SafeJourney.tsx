@@ -62,12 +62,16 @@ export const SafeJourney: React.FC<SafeJourneyProps> = ({ onToast, readAloudDefa
 
   return (
     <div
+      id="box-safe-journey"
       style={{
         background: "var(--card)",
         border: "1px solid var(--line)",
         borderRadius: "var(--radius-lg)",
         padding: "24px",
-        boxShadow: "var(--shadow-sm)"
+        boxShadow: "var(--shadow-sm)",
+        display: "flex",
+        flexDirection: "column",
+        height: "100%"
       }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>

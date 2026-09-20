@@ -1,6 +1,8 @@
 {
   "name": "NeuroSafe",
   "description": "Neurodiversity-affirming accessibility and safety support assistant",
-  "requestFramePermissions": [],
+  "requestFramePermissions": [
+    "geolocation"
+  ],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

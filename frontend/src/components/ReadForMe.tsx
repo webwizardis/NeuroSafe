@@ -121,7 +121,8 @@ export const ReadForMe: React.FC<ReadForMeProps> = ({ onToast, readAloudDefault 
         boxShadow: "var(--shadow-sm)",
         display: "flex",
         flexDirection: "column",
-        gap: 18
+        gap: 18,
+        height: "100%"
       }}
     >
       {/* Top Header */}

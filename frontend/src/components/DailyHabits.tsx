@@ -185,12 +185,16 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ onToast, problems = []
 
   return (
     <div
+      id="box-daily-habits"
       style={{
         background: "var(--card)",
         border: "1px solid var(--line)",
         borderRadius: "var(--radius-lg)",
         padding: "24px",
-        boxShadow: "var(--shadow-sm)"
+        boxShadow: "var(--shadow-sm)",
+        display: "flex",
+        flexDirection: "column",
+        height: "100%"
       }}
     >
       {/* Top Header */}

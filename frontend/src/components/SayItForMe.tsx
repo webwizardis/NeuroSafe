@@ -100,12 +100,16 @@ export const SayItForMe: React.FC<SayItForMeProps> = ({ onToast, readAloudDefaul
 
   return (
     <div
+      id="box-say-it-for-me"
       style={{
         background: "var(--card)",
         border: "1px solid var(--line)",
         borderRadius: "var(--radius-lg)",
         padding: "24px",
-        boxShadow: "var(--shadow-sm)"
+        boxShadow: "var(--shadow-sm)",
+        display: "flex",
+        flexDirection: "column",
+        height: "100%"
       }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>

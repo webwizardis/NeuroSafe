@@ -1,5 +1,5 @@
 import React from "react";
-import { ShieldCheck, User as UserIcon, Settings as SettingsIcon } from "lucide-react";
+import { ShieldCheck, ShieldAlert, User as UserIcon, Settings as SettingsIcon } from "lucide-react";
 import { User, AccessibilitySettings } from "../types";
 import { AccessibilitySettingsBar } from "./AccessibilitySettingsBar";
 
@@ -21,6 +21,13 @@ export const Navbar: React.FC<NavbarProps> = ({
   onLogout
 }) => {
   const displayName = user?.name || user?.email?.split("@")[0] || "Friend";
+
+  const handleScrollToSos = () => {
+    const el = document.getElementById("emergency-sos-station");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
 
   return (
     <header
@@ -138,6 +145,31 @@ export const Navbar: React.FC<NavbarProps> = ({
               />
               <span>{backendOnline ? "Online" : "Connecting…"}</span>
             </span>
+
+            <button
+              type="button"
+              id="navbar-sos-trigger"
+              data-speech="Emergency SOS Beacon"
+              onClick={handleScrollToSos}
+              style={{
+                padding: "7px 14px",
+                borderRadius: "var(--radius-md)",
+                background: "#fee2e2",
+                border: "1.5px solid #fca5a5",
+                color: "#991b1b",
+                fontSize: "0.86rem",
+                fontWeight: 700,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                boxShadow: "0 1px 3px rgba(220, 38, 38, 0.12)"
+              }}
+              title="Immediate access to Emergency SOS & Location Beacon"
+            >
+              <ShieldAlert size={15} color="#dc2626" />
+              <span>SOS Beacon</span>
+            </button>
 
             <button
               type="button"

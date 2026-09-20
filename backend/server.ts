@@ -2214,7 +2214,7 @@ app.post("/api/route/alternative", async (req: Request, res: Response) => {
 // 11. SOS REQUEST
 // ----------------------------------------------------
 app.post("/api/sos", (req: Request, res: Response) => {
-  const { message, contact, confirmed } = req.body || {};
+  const { message, contact, confirmed, location } = req.body || {};
   const isConfirmed = confirmed === true || confirmed === "true" || confirmed === 1;
 
   if (!isConfirmed) {
@@ -2227,6 +2227,7 @@ app.post("/api/sos", (req: Request, res: Response) => {
     status: "confirmed",
     message: message || "I need help.",
     contact: contact || null,
+    location: location || null,
     timestamp: new Date().toISOString(),
   });
 });
