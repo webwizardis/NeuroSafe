@@ -1,4 +1,5 @@
 import React from "react";
+import { ShieldCheck, User as UserIcon, Settings as SettingsIcon } from "lucide-react";
 import { User, AccessibilitySettings } from "../types";
 import { AccessibilitySettingsBar } from "./AccessibilitySettingsBar";
 
@@ -41,34 +42,42 @@ export const Navbar: React.FC<NavbarProps> = ({
           }}
         >
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div
                 style={{
-                  fontSize: "1.4rem",
-                  lineHeight: 1
+                  width: 36,
+                  height: 36,
+                  borderRadius: "var(--radius-md)",
+                  background: "#ecfdf5",
+                  border: "1px solid #a7f3d0",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#059669"
                 }}
               >
-                🌿
-              </span>
+                <ShieldCheck size={20} />
+              </div>
               <span
                 style={{
-                  fontWeight: 700,
+                  fontWeight: 800,
                   fontSize: "1.35rem",
                   letterSpacing: "-0.02em",
-                  color: "var(--spring-green-900)"
+                  color: "#065f46"
                 }}
               >
                 NeuroSafe
               </span>
               <span
                 style={{
-                  fontSize: "0.75rem",
+                  fontSize: "0.74rem",
                   fontWeight: 700,
                   textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                  background: "var(--peach-100)",
-                  color: "var(--peach-900)",
-                  padding: "3px 8px",
+                  letterSpacing: "0.06em",
+                  background: "#ecfdf5",
+                  color: "#047857",
+                  border: "1px solid #a7f3d0",
+                  padding: "3px 9px",
                   borderRadius: "var(--radius-pill)"
                 }}
               >
@@ -101,7 +110,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 color: "var(--ink)"
               }}
             >
-              <span>👤</span>
+              <UserIcon size={14} />
               <span>{displayName}</span>
             </span>
 
@@ -149,7 +158,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               }}
               title="Change your accessibility needs and re-tailor"
             >
-              <span>⚙️</span>
+              <SettingsIcon size={14} />
               <span>Personalize</span>
             </button>
 

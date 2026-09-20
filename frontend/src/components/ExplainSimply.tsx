@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Lightbulb, Volume2, Copy, Sparkles } from "lucide-react";
 import { api } from "../services/api";
 import { speak } from "../utils/speech";
 
@@ -52,31 +53,61 @@ export const ExplainSimply: React.FC<ExplainSimplyProps> = ({ onToast, readAloud
   const handleCopy = () => {
     if (!result) return;
     navigator.clipboard.writeText(result);
-    onToast("Copied to clipboard! 📋", "success");
+    onToast("Copied to clipboard!", "success");
   };
 
   const handleSpeak = () => {
     if (!result) return;
     speak(result);
-    onToast("🔊 Reading explanation aloud…", "info");
+    onToast("Reading explanation aloud…", "info");
   };
 
   return (
     <div
       style={{
         background: "var(--card)",
-        border: "1px solid #99f6e4",
-        borderTop: "4px solid #0d9488",
+        border: "1px solid var(--line)",
         borderRadius: "var(--radius-lg)",
         padding: "24px",
         boxShadow: "var(--shadow-sm)"
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-        <span style={{ fontSize: "1.4rem" }}>💡</span>
-        <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "#0f766e" }}>
-          Explain Simply
-        </h2>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: "var(--radius-md)",
+              background: "#f0fdfa",
+              border: "1px solid #99f6e4",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#0d9488"
+            }}
+          >
+            <Lightbulb size={20} />
+          </div>
+          <h2 style={{ fontSize: "1.2rem", fontWeight: 700, margin: 0, color: "var(--ink)" }}>
+            Explain Simply
+          </h2>
+        </div>
+        <span
+          style={{
+            fontSize: "0.75rem",
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.06em",
+            padding: "3px 10px",
+            borderRadius: "var(--radius-pill)",
+            background: "#f0fdfa",
+            color: "#0f766e",
+            border: "1px solid #99f6e4"
+          }}
+        >
+          Plain Language
+        </span>
       </div>
 
       <p style={{ margin: "0 0 16px 0", fontSize: "0.88rem", color: "var(--ink-secondary)" }}>
@@ -193,7 +224,7 @@ export const ExplainSimply: React.FC<ExplainSimplyProps> = ({ onToast, readAloud
             boxShadow: "0 2px 6px rgba(13, 148, 136, 0.25)"
           }}
         >
-          <span>✨</span>
+          <Sparkles size={16} />
           <span>{loading ? "Translating…" : "Explain Simply"}</span>
         </button>
       </div>
@@ -225,7 +256,10 @@ export const ExplainSimply: React.FC<ExplainSimplyProps> = ({ onToast, readAloud
                 type="button"
                 onClick={handleSpeak}
                 style={{
-                  padding: "5px 10px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "5px 12px",
                   borderRadius: "var(--radius-pill)",
                   background: "var(--peach-200)",
                   color: "var(--peach-900)",
@@ -235,13 +269,16 @@ export const ExplainSimply: React.FC<ExplainSimplyProps> = ({ onToast, readAloud
                   cursor: "pointer"
                 }}
               >
-                🔊 Speak
+                <Volume2 size={14} /> Speak
               </button>
               <button
                 type="button"
                 onClick={handleCopy}
                 style={{
-                  padding: "5px 10px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "5px 12px",
                   borderRadius: "var(--radius-pill)",
                   background: "var(--card)",
                   color: "var(--ink)",
@@ -251,7 +288,7 @@ export const ExplainSimply: React.FC<ExplainSimplyProps> = ({ onToast, readAloud
                   cursor: "pointer"
                 }}
               >
-                📋 Copy
+                <Copy size={14} /> Copy
               </button>
             </div>
           </div>

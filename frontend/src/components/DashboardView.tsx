@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { LayoutGrid, Sparkles, MessageSquare, CheckSquare, Navigation } from "lucide-react";
 import { User, AccessibilitySettings } from "../types";
 import { CustomizationBanner } from "./CustomizationBanner";
 import { ReadForMe } from "./ReadForMe";
@@ -70,63 +71,73 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {[
           {
             id: "all",
-            label: "✨ All Tools",
-            activeBg: "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)",
-            activeBorder: "#10b981",
+            label: "All Tools",
+            icon: LayoutGrid,
+            activeBg: "#ecfdf5",
+            activeBorder: "#059669",
             activeColor: "#065f46"
           },
           {
             id: "sensory",
-            label: "🌿 Sensory & Reading",
-            activeBg: "linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)",
-            activeBorder: "#14b8a6",
+            label: "Sensory & Reading",
+            icon: Sparkles,
+            activeBg: "#f0fdfa",
+            activeBorder: "#0d9488",
             activeColor: "#115e59"
           },
           {
             id: "communication",
-            label: "💬 Communication",
-            activeBg: "linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%)",
-            activeBorder: "#6366f1",
+            label: "Communication",
+            icon: MessageSquare,
+            activeBg: "#eef2ff",
+            activeBorder: "#4f46e5",
             activeColor: "#3730a3"
           },
           {
             id: "executive",
-            label: "🎯 Executive & Habits",
-            activeBg: "linear-gradient(135deg, #fefce8 0%, #fef08a 100%)",
-            activeBorder: "#f59e0b",
+            label: "Executive & Habits",
+            icon: CheckSquare,
+            activeBg: "#fffbeb",
+            activeBorder: "#d97706",
             activeColor: "#92400e"
           },
           {
             id: "safety",
-            label: "🗺️ Travel & Safety",
-            activeBg: "linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)",
-            activeBorder: "#0ea5e9",
+            label: "Travel & Safety",
+            icon: Navigation,
+            activeBg: "#f0f9ff",
+            activeBorder: "#0284c7",
             activeColor: "#075985"
           }
         ].map((cat) => {
           const isSelected = activeCategory === cat.id;
+          const IconComponent = cat.icon;
           return (
             <button
               key={cat.id}
               type="button"
               role="tab"
-              data-speech={cat.label.replace(/^[^\w\s]+/, "").trim()}
+              data-speech={cat.label}
               aria-selected={isSelected}
               onClick={() => setActiveCategory(cat.id as any)}
               style={{
-                padding: "8px 18px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 7,
+                padding: "8px 16px",
                 borderRadius: "var(--radius-pill)",
-                border: isSelected ? `2px solid ${cat.activeBorder}` : "1px solid var(--line)",
+                border: isSelected ? `1.5px solid ${cat.activeBorder}` : "1px solid var(--line)",
                 background: isSelected ? cat.activeBg : "var(--card)",
                 color: isSelected ? cat.activeColor : "var(--ink-secondary)",
-                fontWeight: isSelected ? 700 : 600,
-                fontSize: "0.88rem",
+                fontWeight: isSelected ? 700 : 500,
+                fontSize: "0.86rem",
                 cursor: "pointer",
-                transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
-                boxShadow: isSelected ? "0 2px 8px rgba(0, 0, 0, 0.06)" : "none"
+                transition: "all 0.18s cubic-bezier(0.16, 1, 0.3, 1)",
+                boxShadow: isSelected ? "0 1px 4px rgba(0, 0, 0, 0.05)" : "none"
               }}
             >
-              {cat.label}
+              <IconComponent size={15} />
+              <span>{cat.label}</span>
             </button>
           );
         })}

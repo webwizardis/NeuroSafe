@@ -1,4 +1,14 @@
 import React, { useState } from "react";
+import {
+  BookOpen,
+  Type,
+  ListCollapse,
+  Volume2,
+  Copy,
+  Sparkles,
+  ChevronUp,
+  ChevronDown
+} from "lucide-react";
 import { speak, stopSpeaking } from "../utils/speech";
 import { playTogglePop } from "../utils/audioChime";
 
@@ -98,19 +108,19 @@ export const ReadingRulerTool: React.FC<ReadingRulerToolProps> = ({ onToast }) =
   const handleReadActiveLine = () => {
     if (!activeSentence) return;
     speak(activeSentence);
-    onToast("🔊 Reading isolated line aloud…", "info");
+    onToast("Reading isolated line aloud…", "info");
   };
 
   const handleReadSummary = () => {
     const summaryText = bullets.map((b) => `${b.label}: ${b.text}`).join(". ");
     speak(summaryText);
-    onToast("🔊 Reading 3-bullet deconstruction aloud…", "info");
+    onToast("Reading 3-bullet deconstruction aloud…", "info");
   };
 
   const handleCopySummary = () => {
     const textToCopy = bullets.map((b) => `• ${b.label}: ${b.text}`).join("\n");
     navigator.clipboard.writeText(textToCopy);
-    onToast("Deconstructed summary copied to clipboard! 📋", "success");
+    onToast("Deconstructed summary copied to clipboard!", "success");
   };
 
   return (
@@ -130,7 +140,7 @@ export const ReadingRulerTool: React.FC<ReadingRulerToolProps> = ({ onToast }) =
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 10 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: "1.3rem" }}>📖</span>
+            <BookOpen size={20} color="var(--green)" />
             <h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 700, color: "var(--ink)" }}>
               Interactive Reading Ruler & Wall of Text Deconstructor
             </h3>
@@ -159,10 +169,10 @@ export const ReadingRulerTool: React.FC<ReadingRulerToolProps> = ({ onToast }) =
               cursor: "pointer",
               display: "inline-flex",
               alignItems: "center",
-              gap: 5
+              gap: 6
             }}
           >
-            <span>🔤</span>
+            <Type size={14} />
             <span>{bionicBolding ? "Bionic Bolding: ON" : "Bionic Bolding: OFF"}</span>
           </button>
 
@@ -183,10 +193,10 @@ export const ReadingRulerTool: React.FC<ReadingRulerToolProps> = ({ onToast }) =
               cursor: "pointer",
               display: "inline-flex",
               alignItems: "center",
-              gap: 5
+              gap: 6
             }}
           >
-            <span>📋</span>
+            <ListCollapse size={14} />
             <span>{showDeconstruction ? "Show Full Text" : "Deconstruct to 3 Bullets"}</span>
           </button>
         </div>
@@ -246,7 +256,7 @@ export const ReadingRulerTool: React.FC<ReadingRulerToolProps> = ({ onToast }) =
             color: "var(--ink-secondary)"
           }}
         >
-          ✏️ Paste My Own Text
+          Paste Custom Text
         </button>
       </div>
 
@@ -293,14 +303,28 @@ export const ReadingRulerTool: React.FC<ReadingRulerToolProps> = ({ onToast }) =
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--green)", textTransform: "uppercase" }}>
-              ✨ 3-Bullet Executive Digest (Zero Cognitive Overload)
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                fontSize: "0.82rem",
+                fontWeight: 700,
+                color: "var(--green)",
+                textTransform: "uppercase"
+              }}
+            >
+              <Sparkles size={14} />
+              <span>3-Bullet Executive Digest (Zero Cognitive Overload)</span>
             </span>
             <div style={{ display: "flex", gap: 6 }}>
               <button
                 type="button"
                 onClick={handleReadSummary}
                 style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
                   padding: "4px 10px",
                   borderRadius: "var(--radius-pill)",
                   background: "var(--green)",
@@ -311,12 +335,16 @@ export const ReadingRulerTool: React.FC<ReadingRulerToolProps> = ({ onToast }) =
                   cursor: "pointer"
                 }}
               >
-                🔊 Read Bullets
+                <Volume2 size={13} />
+                <span>Read Bullets</span>
               </button>
               <button
                 type="button"
                 onClick={handleCopySummary}
                 style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
                   padding: "4px 10px",
                   borderRadius: "var(--radius-pill)",
                   background: "var(--card)",
@@ -327,7 +355,8 @@ export const ReadingRulerTool: React.FC<ReadingRulerToolProps> = ({ onToast }) =
                   cursor: "pointer"
                 }}
               >
-                📋 Copy
+                <Copy size={13} />
+                <span>Copy</span>
               </button>
             </div>
           </div>
@@ -410,6 +439,9 @@ export const ReadingRulerTool: React.FC<ReadingRulerToolProps> = ({ onToast }) =
                 onClick={handlePrevLine}
                 disabled={sentences.length <= 1}
                 style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
                   padding: "5px 12px",
                   borderRadius: "var(--radius-pill)",
                   background: "var(--card)",
@@ -420,13 +452,17 @@ export const ReadingRulerTool: React.FC<ReadingRulerToolProps> = ({ onToast }) =
                   cursor: "pointer"
                 }}
               >
-                ▲ Previous Line
+                <ChevronUp size={14} />
+                <span>Previous Line</span>
               </button>
               <button
                 type="button"
                 onClick={handleNextLine}
                 disabled={sentences.length <= 1}
                 style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
                   padding: "5px 12px",
                   borderRadius: "var(--radius-pill)",
                   background: "var(--green)",
@@ -437,12 +473,16 @@ export const ReadingRulerTool: React.FC<ReadingRulerToolProps> = ({ onToast }) =
                   cursor: "pointer"
                 }}
               >
-                Next Line ▼
+                <span>Next Line</span>
+                <ChevronDown size={14} />
               </button>
               <button
                 type="button"
                 onClick={handleReadActiveLine}
                 style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
                   padding: "5px 10px",
                   borderRadius: "var(--radius-pill)",
                   background: "var(--mint-light)",
@@ -453,7 +493,8 @@ export const ReadingRulerTool: React.FC<ReadingRulerToolProps> = ({ onToast }) =
                   cursor: "pointer"
                 }}
               >
-                🔊 Speak Line
+                <Volume2 size={13} />
+                <span>Speak Line</span>
               </button>
               <button
                 type="button"

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { ShieldCheck, Zap, Lock } from "lucide-react";
 import { api, setSessionToken } from "../services/api";
 import { User } from "../types";
 
@@ -50,7 +51,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onToast }) => {
     try {
       const res = await api.demoAuth();
       setSessionToken(res.token, true);
-      onToast("⚡ Instant Demo Mode activated! Welcome, Alex.", "success");
+      onToast("Instant Demo Mode activated! Welcome, Alex.", "success");
       onSuccess(res.user, true);
     } catch (err: any) {
       setErrorMsg(err.message || "Failed to start demo session.");
@@ -97,7 +98,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onToast }) => {
               marginBottom: 14
             }}
           >
-            <span>🌿</span>
+            <ShieldCheck size={16} />
             <span>NeuroSafe Accessibility</span>
           </div>
 
@@ -428,7 +429,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onToast }) => {
               transition: "background 0.15s ease"
             }}
           >
-            <span>⚡</span>
+            <Zap size={16} />
             <span>Instant Safe Demo (1-Click)</span>
           </button>
 
@@ -439,11 +440,17 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onToast }) => {
               borderTop: "1px solid var(--line)",
               fontSize: "0.82rem",
               color: "var(--ink-secondary)",
-              lineHeight: 1.5
+              lineHeight: 1.5,
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 8
             }}
           >
-            🔒 Sensory-safe, privacy-respecting, and free of aggressive trackers or sudden alarms.
-            You remain in control of your settings at all times.
+            <Lock size={14} style={{ flexShrink: 0, marginTop: 2, color: "var(--spring-green-800)" }} />
+            <span>
+              Sensory-safe, privacy-respecting, and free of aggressive trackers or sudden alarms.
+              You remain in control of your settings at all times.
+            </span>
           </div>
         </div>
       </div>

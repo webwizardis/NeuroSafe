@@ -1,4 +1,14 @@
 import React, { useState } from "react";
+import {
+  BookOpen,
+  PenLine,
+  Monitor,
+  Sparkles,
+  Loader2,
+  CheckCircle2,
+  Volume2,
+  Copy
+} from "lucide-react";
 import { api } from "../services/api";
 import { speak, stopSpeaking } from "../utils/speech";
 import { ScreenComfortTool } from "./ScreenComfortTool";
@@ -67,13 +77,13 @@ export const ReadForMe: React.FC<ReadForMeProps> = ({ onToast, readAloudDefault 
     navigator.clipboard.writeText(rewrittenText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-    onToast("Rewritten text copied to clipboard! 📋", "success");
+    onToast("Rewritten text copied to clipboard!", "success");
   };
 
   const handleSpeak = () => {
     if (!rewrittenText) return;
     speak(rewrittenText);
-    onToast("🔊 Reading rewritten text aloud…", "info");
+    onToast("Reading rewritten text aloud…", "info");
   };
 
   const handleClear = () => {
@@ -105,8 +115,7 @@ export const ReadForMe: React.FC<ReadForMeProps> = ({ onToast, readAloudDefault 
       id="read-for-me-container"
       style={{
         background: "var(--card)",
-        border: "1px solid #a7f3d0",
-        borderTop: "4px solid #059669",
+        border: "1px solid var(--line)",
         borderRadius: "var(--radius-lg)",
         padding: "24px",
         boxShadow: "var(--shadow-sm)",
@@ -129,10 +138,38 @@ export const ReadForMe: React.FC<ReadForMeProps> = ({ onToast, readAloudDefault 
       >
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: "1.45rem" }}>📖</span>
-            <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "#065f46" }}>
+            <div
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: "var(--radius-md)",
+                background: "#ecfdf5",
+                border: "1px solid #a7f3d0",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+              }}
+            >
+              <BookOpen size={20} color="var(--spring-green-800)" />
+            </div>
+            <h2 style={{ fontSize: "1.2rem", fontWeight: 700, margin: 0, color: "var(--ink)" }}>
               Read for Me
             </h2>
+            <span
+              style={{
+                fontSize: "0.75rem",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+                padding: "3px 10px",
+                borderRadius: "var(--radius-pill)",
+                background: "#ecfdf5",
+                color: "#065f46",
+                border: "1px solid #a7f3d0"
+              }}
+            >
+              Reading Clarity
+            </span>
           </div>
           <p
             style={{
@@ -152,6 +189,9 @@ export const ReadForMe: React.FC<ReadForMeProps> = ({ onToast, readAloudDefault 
             type="button"
             onClick={() => setActiveTab("rewriter")}
             style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
               padding: "7px 14px",
               borderRadius: "var(--radius-sm)",
               border: "none",
@@ -163,12 +203,16 @@ export const ReadForMe: React.FC<ReadForMeProps> = ({ onToast, readAloudDefault 
               boxShadow: activeTab === "rewriter" ? "0 2px 4px rgba(0,0,0,0.06)" : "none"
             }}
           >
-            <span>✍️ Text Rewriter</span>
+            <PenLine size={14} />
+            <span>Text Rewriter</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("screen_comfort")}
             style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
               padding: "7px 14px",
               borderRadius: "var(--radius-sm)",
               border: "none",
@@ -180,7 +224,8 @@ export const ReadForMe: React.FC<ReadForMeProps> = ({ onToast, readAloudDefault 
               boxShadow: activeTab === "screen_comfort" ? "0 2px 4px rgba(0,0,0,0.06)" : "none"
             }}
           >
-            <span>🖥️ Screen Comfort</span>
+            <Monitor size={14} />
+            <span>Screen Comfort</span>
           </button>
         </div>
       </div>
@@ -320,7 +365,7 @@ export const ReadForMe: React.FC<ReadForMeProps> = ({ onToast, readAloudDefault 
                   boxShadow: "0 2px 8px rgba(33, 107, 84, 0.25)"
                 }}
               >
-                <span>{loading ? "⏳" : "✨"}</span>
+                {loading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
                 <span>{loading ? "Rewriting text…" : "Rewrite for Easy Reading"}</span>
               </button>
             </div>
@@ -354,7 +399,7 @@ export const ReadForMe: React.FC<ReadForMeProps> = ({ onToast, readAloudDefault 
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: "1.1rem" }}>✅</span>
+                  <CheckCircle2 size={18} color="var(--spring-green-800)" />
                   <strong style={{ fontSize: "0.98rem", color: "var(--ink)" }}>
                     Rewritten Text (Literal & Structured)
                   </strong>
@@ -575,7 +620,7 @@ export const ReadForMe: React.FC<ReadForMeProps> = ({ onToast, readAloudDefault 
                       gap: 6
                     }}
                   >
-                    <span>🔊</span>
+                    <Volume2 size={15} />
                     <span>Read Aloud</span>
                   </button>
 
@@ -615,7 +660,7 @@ export const ReadForMe: React.FC<ReadForMeProps> = ({ onToast, readAloudDefault 
                       gap: 6
                     }}
                   >
-                    <span>📋</span>
+                    <Copy size={15} />
                     <span>{copied ? "Copied!" : "Copy Rewritten Text"}</span>
                   </button>
                 </div>

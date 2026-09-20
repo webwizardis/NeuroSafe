@@ -153,7 +153,7 @@ export const api = {
     return request<{ habits: Habit[]; stats?: HabitStats }>("/api/habits");
   },
 
-  async addHabit(title: string, timeOfDay: string = "anytime", icon: string = "✨", notes: string = ""): Promise<{ habit: Habit; stats?: HabitStats }> {
+  async addHabit(title: string, timeOfDay: string = "anytime", icon: string = "sparkles", notes: string = ""): Promise<{ habit: Habit; stats?: HabitStats }> {
     return json("/api/habits", {
       title,
       time_of_day: timeOfDay,

@@ -1,4 +1,16 @@
 import React, { useState, useEffect } from "react";
+import {
+  CheckCircle2,
+  Droplets,
+  Leaf,
+  Pill,
+  Moon,
+  Sun,
+  Volume2,
+  Sparkles,
+  Check,
+  X
+} from "lucide-react";
 import { api } from "../services/api";
 import { Habit, HabitStats, HabitSuggestion } from "../types";
 import { speak } from "../utils/speech";
@@ -8,11 +20,22 @@ interface DailyHabitsProps {
   problems?: string[];
 }
 
+const renderHabitIcon = (icon?: string) => {
+  if (!icon) return <CheckCircle2 size={16} color="var(--spring-green-800)" />;
+  const normalized = icon.toLowerCase();
+  if (normalized.includes("water") || normalized.includes("droplet") || icon.includes("💧")) return <Droplets size={16} color="#0284c7" />;
+  if (normalized.includes("leaf") || normalized.includes("nature") || icon.includes("🌿")) return <Leaf size={16} color="#059669" />;
+  if (normalized.includes("pill") || normalized.includes("med") || icon.includes("💊")) return <Pill size={16} color="#7c3aed" />;
+  if (normalized.includes("moon") || normalized.includes("night") || icon.includes("🌙")) return <Moon size={16} color="#4338ca" />;
+  if (normalized.includes("sun") || normalized.includes("morning") || icon.includes("☀️")) return <Sun size={16} color="#d97706" />;
+  return <CheckCircle2 size={16} color="var(--spring-green-800)" />;
+};
+
 const PRESET_HABITS = [
-  { title: "Morning hydration (1 glass of water)", time: "morning", icon: "💧" },
-  { title: "5-minute quiet sensory pause", time: "afternoon", icon: "🌿" },
-  { title: "Take daily vitamins or meds", time: "morning", icon: "💊" },
-  { title: "Gentle evening wind-down stretch", time: "evening", icon: "🌙" }
+  { title: "Morning hydration (1 glass of water)", time: "morning", icon: "water" },
+  { title: "5-minute quiet sensory pause", time: "afternoon", icon: "leaf" },
+  { title: "Take daily vitamins or meds", time: "morning", icon: "pill" },
+  { title: "Gentle evening wind-down stretch", time: "evening", icon: "moon" }
 ];
 
 export const DailyHabits: React.FC<DailyHabitsProps> = ({ onToast, problems = [] }) => {
@@ -26,7 +49,7 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ onToast, problems = []
   const [filter, setFilter] = useState<"all" | "morning" | "afternoon" | "evening">("all");
   const [newTitle, setNewTitle] = useState("");
   const [newTime, setNewTime] = useState<"morning" | "afternoon" | "evening" | "anytime">("anytime");
-  const [newIcon, setNewIcon] = useState("✨");
+  const [newIcon, setNewIcon] = useState("check");
   const [loading, setLoading] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
   const [suggestions, setSuggestions] = useState<HabitSuggestion[]>([]);
@@ -74,7 +97,7 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ onToast, problems = []
       const res = await api.toggleHabit(id);
       if (res.stats) setStats(res.stats);
       if (nextDone) {
-        onToast(`Goal completed: ${target.title} ✨`, "success");
+        onToast(`Goal completed: ${target.title}`, "success");
       }
     } catch (err: any) {
       // Revert
@@ -85,7 +108,7 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ onToast, problems = []
     }
   };
 
-  const handleAdd = async (title: string, time: any = "anytime", icon: string = "✨") => {
+  const handleAdd = async (title: string, time: any = "anytime", icon: string = "check") => {
     if (!title.trim()) {
       onToast("Please enter a habit title.", "info");
       return;
@@ -152,7 +175,7 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ onToast, problems = []
       msg += ` All goals completed! Excellent gentle care today.`;
     }
     speak(msg);
-    onToast("🔊 Reading habit progress aloud…", "info");
+    onToast("Reading habit progress aloud…", "info");
   };
 
   const filteredHabits =
@@ -164,8 +187,7 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ onToast, problems = []
     <div
       style={{
         background: "var(--card)",
-        border: "1px solid #ddd6fe",
-        borderTop: "4px solid #8b5cf6",
+        border: "1px solid var(--line)",
         borderRadius: "var(--radius-lg)",
         padding: "24px",
         boxShadow: "var(--shadow-sm)"
@@ -182,63 +204,103 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ onToast, problems = []
           marginBottom: 16
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: "1.4rem" }}>✨</span>
-          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "#6d28d9" }}>
-            Daily Habits & Calm Anchors
-          </h2>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: "var(--radius-md)",
+              background: "#f5f3ff",
+              border: "1px solid #ddd6fe",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#7c3aed"
+            }}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <h2 style={{ fontSize: "1.2rem", fontWeight: 700, margin: 0, color: "var(--ink)" }}>
+              Daily Habits & Calm Anchors
+            </h2>
+          </div>
         </div>
 
-        <div style={{ display: "flex", gap: 8 }}>
-          <button
-            type="button"
-            onClick={handleReadStatus}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <span
             style={{
-              padding: "6px 12px",
+              fontSize: "0.75rem",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              padding: "3px 10px",
               borderRadius: "var(--radius-pill)",
-              background: "var(--peach-200)",
-              color: "var(--peach-900)",
-              border: "none",
-              fontWeight: 600,
-              fontSize: "0.82rem",
-              cursor: "pointer"
+              background: "#f5f3ff",
+              color: "#6d28d9",
+              border: "1px solid #ddd6fe"
             }}
           >
-            🔊 Status
-          </button>
-          <button
-            type="button"
-            onClick={handleSuggest}
-            disabled={suggesting}
-            style={{
-              padding: "6px 12px",
-              borderRadius: "var(--radius-pill)",
-              background: "var(--spring-mint-200)",
-              color: "var(--spring-green-900)",
-              border: "none",
-              fontWeight: 600,
-              fontSize: "0.82rem",
-              cursor: "pointer"
-            }}
-          >
-            {suggesting ? "Thinking…" : "✨ AI Suggestions"}
-          </button>
-          <button
-            type="button"
-            onClick={handleReset}
-            style={{
-              padding: "6px 12px",
-              borderRadius: "var(--radius-pill)",
-              background: "var(--paper)",
-              color: "var(--ink-secondary)",
-              border: "1px solid var(--line)",
-              fontSize: "0.82rem",
-              cursor: "pointer"
-            }}
-            title="Reset checks for a fresh day"
-          >
-            Reset Checks
-          </button>
+            Routines & Flow
+          </span>
+
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button
+              type="button"
+              onClick={handleReadStatus}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "6px 12px",
+                borderRadius: "var(--radius-pill)",
+                background: "var(--peach-200)",
+                color: "var(--peach-900)",
+                border: "none",
+                fontWeight: 600,
+                fontSize: "0.82rem",
+                cursor: "pointer"
+              }}
+            >
+              <Volume2 size={14} /> Status
+            </button>
+            <button
+              type="button"
+              onClick={handleSuggest}
+              disabled={suggesting}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "6px 12px",
+                borderRadius: "var(--radius-pill)",
+                background: "var(--spring-mint-200)",
+                color: "var(--spring-green-900)",
+                border: "none",
+                fontWeight: 600,
+                fontSize: "0.82rem",
+                cursor: "pointer"
+              }}
+            >
+              <Sparkles size={14} /> {suggesting ? "Thinking…" : "AI Suggestions"}
+            </button>
+            <button
+              type="button"
+              onClick={handleReset}
+              style={{
+                padding: "6px 12px",
+                borderRadius: "var(--radius-pill)",
+                background: "var(--paper)",
+                color: "var(--ink-secondary)",
+                border: "1px solid var(--line)",
+                fontSize: "0.82rem",
+                cursor: "pointer"
+              }}
+              title="Reset checks for a fresh day"
+            >
+              Reset Checks
+            </button>
+          </div>
         </div>
       </div>
 
@@ -322,7 +384,7 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ onToast, problems = []
               textTransform: "capitalize"
             }}
           >
-            {f === "all" ? "All Habits" : f === "morning" ? "🌅 Morning" : f === "afternoon" ? "☀️ Afternoon" : "🌙 Evening"}
+            {f === "all" ? "All Habits" : f === "morning" ? "Morning" : f === "afternoon" ? "Afternoon" : "Evening"}
           </button>
         ))}
       </div>
@@ -373,12 +435,24 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ onToast, problems = []
                     fontWeight: 700
                   }}
                 >
-                  {habit.completed_today ? "✓" : ""}
+                  {habit.completed_today ? <Check size={14} /> : null}
                 </div>
 
                 <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span>{habit.icon || "✨"}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div
+                      style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: "var(--radius-sm)",
+                        background: "var(--card)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center"
+                      }}
+                    >
+                      {renderHabitIcon(habit.icon)}
+                    </div>
                     <strong
                       style={{
                         fontSize: "0.95rem",
@@ -410,7 +484,7 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ onToast, problems = []
                       borderRadius: "var(--radius-pill)"
                     }}
                   >
-                    🔥 {habit.streak}d
+                    Streak: {habit.streak}d
                   </span>
                 )}
                 <button
@@ -423,10 +497,12 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ onToast, problems = []
                     color: "var(--ink-secondary)",
                     cursor: "pointer",
                     padding: "4px 8px",
-                    fontSize: "0.9rem"
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
                   }}
                 >
-                  ✕
+                  <X size={15} />
                 </button>
               </div>
             </div>
@@ -445,8 +521,17 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ onToast, problems = []
             borderRadius: "var(--radius-md)"
           }}
         >
-          <strong style={{ display: "block", fontSize: "0.9rem", color: "var(--spring-green-900)", marginBottom: 10 }}>
-            ✨ Recommended Low-Pressure Anchors:
+          <strong
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: "0.9rem",
+              color: "var(--spring-green-900)",
+              marginBottom: 10
+            }}
+          >
+            <Sparkles size={16} /> Recommended Low-Pressure Anchors:
           </strong>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 8 }}>
             {suggestions.map((s, idx) => (
@@ -463,7 +548,7 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ onToast, problems = []
                 }}
               >
                 <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                  <span>{s.icon || "✨"}</span>
+                  {renderHabitIcon(s.icon)}
                   <strong style={{ fontSize: "0.86rem", color: "var(--ink)" }}>{s.title}</strong>
                 </div>
                 {s.notes && <span style={{ fontSize: "0.78rem", color: "var(--ink-secondary)" }}>{s.notes}</span>}
@@ -504,6 +589,9 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ onToast, problems = []
             type="button"
             onClick={() => handleAdd(preset.title, preset.time, preset.icon)}
             style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
               padding: "4px 10px",
               borderRadius: "var(--radius-pill)",
               background: "var(--paper-peach)",
@@ -514,7 +602,8 @@ export const DailyHabits: React.FC<DailyHabitsProps> = ({ onToast, problems = []
               cursor: "pointer"
             }}
           >
-            + {preset.icon} {preset.title}
+            {renderHabitIcon(preset.icon)}
+            <span>{preset.title}</span>
           </button>
         ))}
       </div>

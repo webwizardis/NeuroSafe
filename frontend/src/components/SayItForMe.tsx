@@ -1,4 +1,13 @@
 import React, { useState, useEffect } from "react";
+import {
+  MessageSquare,
+  Volume2,
+  Award,
+  Square,
+  Copy,
+  CheckCircle,
+  Sparkles
+} from "lucide-react";
 import { api } from "../services/api";
 import { speak, stopSpeaking, isSpeechActive } from "../utils/speech";
 import { playRewardChime } from "../utils/audioChime";
@@ -72,12 +81,12 @@ export const SayItForMe: React.FC<SayItForMeProps> = ({ onToast, readAloudDefaul
   const handleCopy = () => {
     if (!draftResult) return;
     navigator.clipboard.writeText(draftResult);
-    onToast("Message copied to clipboard! 📋", "success");
+    onToast("Message copied to clipboard!", "success");
   };
 
   const handleQuickSpeak = (phrase: string) => {
     speak(phrase);
-    onToast(`🔊 Speaking phrase…`, "info");
+    onToast(`Speaking phrase…`, "info");
   };
 
   const handleCompleteTask = () => {
@@ -86,43 +95,74 @@ export const SayItForMe: React.FC<SayItForMeProps> = ({ onToast, readAloudDefaul
     localStorage.setItem("neurosafe_peace_tokens", String(newCount));
     setRewardEarned(true);
     playRewardChime();
-    onToast("🌟 Reward unlocked! Peace token awarded!", "success");
+    onToast("Reward unlocked! Peace token awarded!", "success");
   };
 
   return (
     <div
       style={{
         background: "var(--card)",
-        border: "1px solid #c7d2fe",
-        borderTop: "4px solid #6366f1",
+        border: "1px solid var(--line)",
         borderRadius: "var(--radius-lg)",
         padding: "24px",
         boxShadow: "var(--shadow-sm)"
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: "1.4rem" }}>💬</span>
-          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "#4338ca" }}>
-            Say It For Me
-          </h2>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: "var(--radius-md)",
+              background: "#eef2ff",
+              border: "1px solid #c7d2fe",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            }}
+          >
+            <MessageSquare size={18} color="#4338ca" />
+          </div>
+          <div>
+            <h2 style={{ fontSize: "1.2rem", fontWeight: 700, margin: 0, color: "var(--ink)" }}>
+              Say It For Me
+            </h2>
+          </div>
         </div>
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            background: "#eef2ff",
-            padding: "4px 12px",
-            borderRadius: "var(--radius-pill)",
-            border: "1px solid #c7d2fe",
-            fontSize: "0.8rem",
-            fontWeight: 700,
-            color: "#3730a3"
-          }}
-        >
-          <span>🏅</span>
-          <span>{peaceTokens} Peace Tokens</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span
+            style={{
+              fontSize: "0.75rem",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              padding: "3px 10px",
+              borderRadius: "var(--radius-pill)",
+              background: "#eef2ff",
+              color: "#3730a3",
+              border: "1px solid #c7d2fe"
+            }}
+          >
+            Social Scripts
+          </span>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              background: "#eef2ff",
+              padding: "3px 10px",
+              borderRadius: "var(--radius-pill)",
+              border: "1px solid #c7d2fe",
+              fontSize: "0.78rem",
+              fontWeight: 700,
+              color: "#4338ca"
+            }}
+          >
+            <Award size={14} />
+            <span>{peaceTokens} Tokens</span>
+          </div>
         </div>
       </div>
 
@@ -155,6 +195,9 @@ export const SayItForMe: React.FC<SayItForMeProps> = ({ onToast, readAloudDefaul
             type="button"
             onClick={stopSpeaking}
             style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
               padding: "3px 8px",
               borderRadius: "var(--radius-pill)",
               background: "transparent",
@@ -165,7 +208,8 @@ export const SayItForMe: React.FC<SayItForMeProps> = ({ onToast, readAloudDefaul
               cursor: "pointer"
             }}
           >
-            ⏹ Stop Audio
+            <Square size={11} />
+            <span>Stop Audio</span>
           </button>
         </div>
 
@@ -190,7 +234,7 @@ export const SayItForMe: React.FC<SayItForMeProps> = ({ onToast, readAloudDefaul
                 gap: 6
               }}
             >
-              <span>🔊</span>
+              <Volume2 size={14} color="var(--peach-900)" />
               <span>{item.label}</span>
             </button>
           ))}
@@ -331,7 +375,7 @@ export const SayItForMe: React.FC<SayItForMeProps> = ({ onToast, readAloudDefaul
             boxShadow: "0 2px 6px rgba(99, 102, 241, 0.25)"
           }}
         >
-          <span>✨</span>
+          <Sparkles size={16} />
           <span>{loading ? "Drafting…" : "Draft Polite Message"}</span>
         </button>
       </div>
@@ -362,6 +406,9 @@ export const SayItForMe: React.FC<SayItForMeProps> = ({ onToast, readAloudDefaul
                 type="button"
                 onClick={() => speak(draftResult)}
                 style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
                   padding: "5px 10px",
                   borderRadius: "var(--radius-pill)",
                   background: "var(--peach-200)",
@@ -372,12 +419,16 @@ export const SayItForMe: React.FC<SayItForMeProps> = ({ onToast, readAloudDefaul
                   cursor: "pointer"
                 }}
               >
-                🔊 Speak Aloud
+                <Volume2 size={13} />
+                <span>Speak Aloud</span>
               </button>
               <button
                 type="button"
                 onClick={handleCopy}
                 style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
                   padding: "5px 10px",
                   borderRadius: "var(--radius-pill)",
                   background: "var(--card)",
@@ -388,7 +439,8 @@ export const SayItForMe: React.FC<SayItForMeProps> = ({ onToast, readAloudDefaul
                   cursor: "pointer"
                 }}
               >
-                📋 Copy
+                <Copy size={13} />
+                <span>Copy</span>
               </button>
               <button
                 type="button"
@@ -405,10 +457,10 @@ export const SayItForMe: React.FC<SayItForMeProps> = ({ onToast, readAloudDefaul
                   cursor: "pointer",
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: 4
+                  gap: 5
                 }}
               >
-                <span>🎉</span>
+                <CheckCircle size={14} />
                 <span>Sent / Done!</span>
               </button>
             </div>
@@ -440,7 +492,10 @@ export const SayItForMe: React.FC<SayItForMeProps> = ({ onToast, readAloudDefaul
                 gap: 8
               }}
             >
-              <div style={{ fontSize: "2rem", lineHeight: 1 }}>✨ 🕊️ 🌟 🏅 🌸</div>
+              <div style={{ display: "flex", gap: 8, justifyContent: "center", color: "var(--spring-green-800)" }}>
+                <Sparkles size={24} />
+                <Award size={24} />
+              </div>
               <strong style={{ fontSize: "1.05rem", color: "var(--spring-green-900)" }}>
                 Communication Victory! +1 Peace Token Awarded
               </strong>
@@ -450,6 +505,9 @@ export const SayItForMe: React.FC<SayItForMeProps> = ({ onToast, readAloudDefaul
               <div style={{ display: "flex", gap: 10, marginTop: 6, flexWrap: "wrap", justifyContent: "center" }}>
                 <span
                   style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 5,
                     fontSize: "0.82rem",
                     fontWeight: 700,
                     color: "var(--spring-green-800)",
@@ -459,7 +517,8 @@ export const SayItForMe: React.FC<SayItForMeProps> = ({ onToast, readAloudDefaul
                     border: "1px solid var(--spring-mint-300)"
                   }}
                 >
-                  🏅 Total Peace Tokens: {peaceTokens}
+                  <Award size={13} />
+                  <span>Total Peace Tokens: {peaceTokens}</span>
                 </span>
                 <button
                   type="button"
@@ -479,7 +538,7 @@ export const SayItForMe: React.FC<SayItForMeProps> = ({ onToast, readAloudDefaul
                     cursor: "pointer"
                   }}
                 >
-                  Draft Another Message ✨
+                  Draft Another Message
                 </button>
               </div>
             </div>

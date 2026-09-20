@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { MapPin, Volume2 } from "lucide-react";
 import { api } from "../services/api";
 import { RouteResponse } from "../types";
 import { speak } from "../utils/speech";
@@ -52,7 +53,7 @@ export const SafeJourney: React.FC<SafeJourneyProps> = ({ onToast, readAloudDefa
       .join(". ");
     if (stepsText) {
       speak(`Route directions: ${stepsText}`);
-      onToast("🔊 Reading route guidance…", "info");
+      onToast("Reading route guidance aloud…", "info");
     }
   };
 
@@ -63,18 +64,50 @@ export const SafeJourney: React.FC<SafeJourneyProps> = ({ onToast, readAloudDefa
     <div
       style={{
         background: "var(--card)",
-        border: "1px solid #bae6fd",
-        borderTop: "4px solid #0284c7",
+        border: "1px solid var(--line)",
         borderRadius: "var(--radius-lg)",
         padding: "24px",
         boxShadow: "var(--shadow-sm)"
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-        <span style={{ fontSize: "1.4rem" }}>🗺️</span>
-        <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "#0369a1" }}>
-          Safe Journey & Calm Wayfinding
-        </h2>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: "var(--radius-md)",
+              background: "#f0f9ff",
+              border: "1px solid #bae6fd",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#0284c7"
+            }}
+          >
+            <MapPin size={20} />
+          </div>
+          <div>
+            <h2 style={{ fontSize: "1.2rem", fontWeight: 700, margin: 0, color: "var(--ink)" }}>
+              Safe Journey & Calm Wayfinding
+            </h2>
+          </div>
+        </div>
+        <span
+          style={{
+            fontSize: "0.75rem",
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.06em",
+            padding: "3px 10px",
+            borderRadius: "var(--radius-pill)",
+            background: "#f0f9ff",
+            color: "#0369a1",
+            border: "1px solid #bae6fd"
+          }}
+        >
+          Calm Travel
+        </span>
       </div>
 
       <p style={{ margin: "0 0 16px 0", fontSize: "0.88rem", color: "var(--ink-secondary)" }}>
@@ -161,10 +194,10 @@ export const SafeJourney: React.FC<SafeJourneyProps> = ({ onToast, readAloudDefa
               fontSize: "0.86rem"
             }}
           >
-            <option value="walking">🚶 Walking (Quiet paths)</option>
-            <option value="transit">🚌 Public Transit</option>
-            <option value="bicycling">🚲 Bicycle</option>
-            <option value="driving">🚗 Driving</option>
+            <option value="walking">Walking (Quiet paths)</option>
+            <option value="transit">Public Transit</option>
+            <option value="bicycling">Bicycle</option>
+            <option value="driving">Driving</option>
           </select>
         </div>
 
@@ -202,7 +235,7 @@ export const SafeJourney: React.FC<SafeJourneyProps> = ({ onToast, readAloudDefa
               cursor: "pointer"
             }}
           >
-            🌿 Alternative Path
+            Alternative Path
           </button>
         </div>
       </div>
@@ -242,6 +275,9 @@ export const SafeJourney: React.FC<SafeJourneyProps> = ({ onToast, readAloudDefa
               type="button"
               onClick={handleSpeakSteps}
               style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
                 padding: "5px 12px",
                 borderRadius: "var(--radius-pill)",
                 background: "var(--peach-200)",
@@ -252,7 +288,7 @@ export const SafeJourney: React.FC<SafeJourneyProps> = ({ onToast, readAloudDefa
                 cursor: "pointer"
               }}
             >
-              🔊 Read Directions
+              <Volume2 size={14} /> Read Directions
             </button>
           </div>
 
@@ -269,7 +305,7 @@ export const SafeJourney: React.FC<SafeJourneyProps> = ({ onToast, readAloudDefa
               lineHeight: 1.45
             }}
           >
-            🌿 <strong>Sensory Profile:</strong> Prioritizes shaded sidewalks, minimizes heavy traffic noise, and steers away from construction alerts.
+            <strong>Sensory Profile:</strong> Prioritizes shaded sidewalks, minimizes heavy traffic noise, and steers away from construction alerts.
           </div>
 
           {/* Turn-by-Turn Steps */}

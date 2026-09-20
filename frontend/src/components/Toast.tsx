@@ -1,4 +1,5 @@
 import React from "react";
+import { CheckCircle2, AlertTriangle, Info, X } from "lucide-react";
 
 interface ToastProps {
   message: string | null;
@@ -16,6 +17,9 @@ export const Toast: React.FC<ToastProps> = ({ message, type = "info", onClose })
       ? { background: "var(--spring-green-700)", color: "#ffffff" }
       : { background: "var(--spring-green-800)", color: "#ffffff" };
 
+  const StatusIcon =
+    type === "error" ? AlertTriangle : type === "success" ? CheckCircle2 : Info;
+
   return (
     <div
       role="status"
@@ -25,18 +29,19 @@ export const Toast: React.FC<ToastProps> = ({ message, type = "info", onClose })
         bottom: 24,
         left: "50%",
         transform: "translateX(-50%)",
-        padding: "12px 24px",
+        padding: "10px 20px",
         borderRadius: "var(--radius-pill)",
         boxShadow: "0 8px 30px rgba(0,0,0,0.18)",
         zIndex: 9999,
         display: "flex",
         alignItems: "center",
-        gap: 12,
+        gap: 10,
         fontWeight: 600,
-        fontSize: "0.95rem",
+        fontSize: "0.92rem",
         ...bgStyle
       }}
     >
+      <StatusIcon size={18} />
       <span>{message}</span>
       {onClose && (
         <button
@@ -47,13 +52,13 @@ export const Toast: React.FC<ToastProps> = ({ message, type = "info", onClose })
             border: "none",
             color: "currentColor",
             cursor: "pointer",
-            padding: "2px 6px",
-            fontSize: "1rem",
-            lineHeight: 1,
+            padding: "2px",
+            display: "inline-flex",
+            alignItems: "center",
             opacity: 0.85
           }}
         >
-          ✕
+          <X size={16} />
         </button>
       )}
     </div>

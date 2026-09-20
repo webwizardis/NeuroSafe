@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Volume2 } from "lucide-react";
 import { User, AccessibilitySettings } from "./types";
 import { api, getSessionToken, setSessionToken } from "./services/api";
 import { Navbar } from "./components/Navbar";
@@ -250,7 +251,9 @@ export const App: React.FC = () => {
             boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
           }}
         >
-          <span>🔊 Speaking…</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <Volume2 size={16} /> Speaking…
+          </span>
           <button
             type="button"
             onClick={stopSpeaking}

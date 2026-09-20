@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Eye, FileText, ListOrdered, Volume2, Sliders, Check, ChevronUp, ChevronDown, Sun, Moon, Sparkles, Type, Palette } from "lucide-react";
 import { AccessibilitySettings } from "../types";
 import { speak } from "../utils/speech";
 import { playTogglePop } from "../utils/audioChime";
@@ -70,8 +71,8 @@ export const AccessibilitySettingsBar: React.FC<AccessibilitySettingsBarProps> =
     onUpdate(
       updated,
       nextVal
-        ? "🌿 Low-Stimulation enabled: Brightness dimmed to 85%, glare removed."
-        : "☀️ Standard visual mode restored."
+        ? "Low-Stimulation enabled: Brightness dimmed to 85%, glare removed."
+        : "Standard visual mode restored."
     );
   };
 
@@ -91,7 +92,7 @@ export const AccessibilitySettingsBar: React.FC<AccessibilitySettingsBarProps> =
 
     onUpdate(
       updated,
-      nextVal ? "📖 High-legibility plain language mode enabled." : "Standard text restored."
+      nextVal ? "High-legibility plain language mode enabled." : "Standard text restored."
     );
   };
 
@@ -110,7 +111,7 @@ export const AccessibilitySettingsBar: React.FC<AccessibilitySettingsBarProps> =
 
     onUpdate(
       updated,
-      nextVal ? "🎯 Step-by-Step single task pacing enabled." : "All steps view enabled."
+      nextVal ? "Step-by-Step single task pacing enabled." : "All steps view enabled."
     );
   };
 
@@ -129,7 +130,7 @@ export const AccessibilitySettingsBar: React.FC<AccessibilitySettingsBarProps> =
     }
     onUpdate(
       updated,
-      nextVal ? "🔊 Audio read-aloud enabled." : "Audio read-aloud muted."
+      nextVal ? "Audio read-aloud enabled." : "Audio read-aloud muted."
     );
   };
 
@@ -206,10 +207,10 @@ export const AccessibilitySettingsBar: React.FC<AccessibilitySettingsBarProps> =
             transition: "all 0.15s ease"
           }}
         >
-          <span>🌿</span>
+          <Eye size={16} />
           <span>Low-Stimulation</span>
           <span style={{ fontSize: "0.78rem", opacity: 0.85 }}>({currentBrightness}%)</span>
-          {settings.low_stimulation_interface && <span aria-hidden="true">✓</span>}
+          {settings.low_stimulation_interface && <Check size={14} aria-hidden="true" />}
         </button>
 
         <button
@@ -240,9 +241,9 @@ export const AccessibilitySettingsBar: React.FC<AccessibilitySettingsBarProps> =
             transition: "all 0.15s ease"
           }}
         >
-          <span>📖</span>
+          <FileText size={16} />
           <span>High Legibility</span>
-          {settings.plain_language_mode && <span aria-hidden="true">✓</span>}
+          {settings.plain_language_mode && <Check size={14} aria-hidden="true" />}
         </button>
 
         <button
@@ -273,9 +274,9 @@ export const AccessibilitySettingsBar: React.FC<AccessibilitySettingsBarProps> =
             transition: "all 0.15s ease"
           }}
         >
-          <span>🎯</span>
+          <ListOrdered size={16} />
           <span>Step-by-Step Pacing</span>
-          {settings.step_by_step_tasks && <span aria-hidden="true">✓</span>}
+          {settings.step_by_step_tasks && <Check size={14} aria-hidden="true" />}
         </button>
 
         <button
@@ -306,9 +307,9 @@ export const AccessibilitySettingsBar: React.FC<AccessibilitySettingsBarProps> =
             transition: "all 0.15s ease"
           }}
         >
-          <span>🔊</span>
+          <Volume2 size={16} />
           <span>Audio Read-Aloud</span>
-          {settings.read_aloud_enabled && <span aria-hidden="true">✓</span>}
+          {settings.read_aloud_enabled && <Check size={14} aria-hidden="true" />}
         </button>
 
         {/* EHV Customization Drawer Toggle Button */}
@@ -333,9 +334,9 @@ export const AccessibilitySettingsBar: React.FC<AccessibilitySettingsBarProps> =
             marginLeft: "auto"
           }}
         >
-          <span>🎛️</span>
-          <span>EHV Customization (Brightness & Sensory)</span>
-          <span style={{ fontSize: "0.8rem" }}>{showEhvTray ? "▲" : "▼"}</span>
+          <Sliders size={16} />
+          <span>Sensory & Visual Controls</span>
+          {showEhvTray ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </button>
       </div>
 
@@ -356,9 +357,9 @@ export const AccessibilitySettingsBar: React.FC<AccessibilitySettingsBarProps> =
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: "1.2rem" }}>🎛️</span>
+              <Sliders size={18} color="var(--spring-green-700)" />
               <strong style={{ fontSize: "0.98rem", color: "var(--ink)" }}>
-                EHV Customization: Environmental & Sensory Controls
+                Sensory & Environmental Controls
               </strong>
             </div>
             <button
@@ -391,7 +392,7 @@ export const AccessibilitySettingsBar: React.FC<AccessibilitySettingsBarProps> =
                   htmlFor="ehv-brightness-slider"
                   style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--ink)" }}
                 >
-                  ☀️ Screen Brightness: <span style={{ color: "var(--spring-green-800)" }}>{currentBrightness}%</span>
+                  Screen Brightness: <span style={{ color: "var(--spring-green-800)" }}>{currentBrightness}%</span>
                 </label>
                 <div style={{ display: "flex", gap: 4 }}>
                   <button
@@ -406,7 +407,7 @@ export const AccessibilitySettingsBar: React.FC<AccessibilitySettingsBarProps> =
                       cursor: "pointer"
                     }}
                   >
-                    🌙 70%
+                    Dim 70%
                   </button>
                   <button
                     type="button"
@@ -420,7 +421,7 @@ export const AccessibilitySettingsBar: React.FC<AccessibilitySettingsBarProps> =
                       cursor: "pointer"
                     }}
                   >
-                    🌿 85%
+                    Calm 85%
                   </button>
                   <button
                     type="button"
@@ -434,7 +435,7 @@ export const AccessibilitySettingsBar: React.FC<AccessibilitySettingsBarProps> =
                       cursor: "pointer"
                     }}
                   >
-                    ☀️ 100%
+                    Full 100%
                   </button>
                 </div>
               </div>
@@ -469,7 +470,7 @@ export const AccessibilitySettingsBar: React.FC<AccessibilitySettingsBarProps> =
                   htmlFor="ehv-contrast-slider"
                   style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--ink)" }}
                 >
-                  🌓 Contrast Level: <span style={{ color: "var(--spring-green-800)" }}>{currentContrast}%</span>
+                  Contrast Level: <span style={{ color: "var(--spring-green-800)" }}>{currentContrast}%</span>
                 </label>
                 <div style={{ display: "flex", gap: 4 }}>
                   <button
@@ -529,7 +530,7 @@ export const AccessibilitySettingsBar: React.FC<AccessibilitySettingsBarProps> =
             {/* 3. Blue Light Warmth / Tint */}
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <span style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--ink)" }}>
-                🌅 Warmth & Blue-Light Filter:
+                Warmth & Blue-Light Filter:
               </span>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 <button
@@ -546,7 +547,7 @@ export const AccessibilitySettingsBar: React.FC<AccessibilitySettingsBarProps> =
                     cursor: "pointer"
                   }}
                 >
-                  ⚪ Natural
+                  Natural
                 </button>
                 <button
                   type="button"
@@ -562,7 +563,7 @@ export const AccessibilitySettingsBar: React.FC<AccessibilitySettingsBarProps> =
                     cursor: "pointer"
                   }}
                 >
-                  🌅 Warm Amber
+                  Warm Amber
                 </button>
                 <button
                   type="button"
@@ -578,7 +579,7 @@ export const AccessibilitySettingsBar: React.FC<AccessibilitySettingsBarProps> =
                     cursor: "pointer"
                   }}
                 >
-                  🌿 Soft Sage Mint
+                  Soft Sage Mint
                 </button>
               </div>
             </div>
@@ -586,7 +587,7 @@ export const AccessibilitySettingsBar: React.FC<AccessibilitySettingsBarProps> =
             {/* 4. Text & Font Scaling */}
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <span style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--ink)" }}>
-                🔤 Typography & Font Scale:
+                Typography & Font Scale:
               </span>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 <button
@@ -640,7 +641,7 @@ export const AccessibilitySettingsBar: React.FC<AccessibilitySettingsBarProps> =
             {/* 5. Motion and Auditory feedback */}
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <span style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--ink)" }}>
-                ✨ Sensory Dynamics:
+                Sensory Dynamics:
               </span>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.82rem", cursor: "pointer" }}>

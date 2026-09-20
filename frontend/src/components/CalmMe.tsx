@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Wind, Volume2, RotateCcw, Info, Play, Pause } from "lucide-react";
 import { api } from "../services/api";
 import { speak } from "../utils/speech";
 
@@ -69,15 +70,14 @@ export const CalmMe: React.FC<CalmMeProps> = ({ onToast, lowStimulation }) => {
   const handleSpeakSteps = () => {
     const text = `Grounding sequence: ${steps.join(". ")}`;
     speak(text, 0.85);
-    onToast("🔊 Guiding calm breath aloud…", "info");
+    onToast("Guiding calm breath aloud…", "info");
   };
 
   return (
     <div
       style={{
         background: "var(--card)",
-        border: "1px solid #a7f3d0",
-        borderTop: "4px solid #059669",
+        border: "1px solid var(--line)",
         borderRadius: "var(--radius-lg)",
         padding: "24px",
         boxShadow: "var(--shadow-sm)"
@@ -93,51 +93,89 @@ export const CalmMe: React.FC<CalmMeProps> = ({ onToast, lowStimulation }) => {
           marginBottom: 16
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: "1.4rem" }}>🌿</span>
-          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "#065f46" }}>
-            Calm Me & Grounding Pause
-          </h2>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: "var(--radius-md)",
+              background: "#ecfdf5",
+              border: "1px solid #a7f3d0",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#059669"
+            }}
+          >
+            <Wind size={20} />
+          </div>
+          <div>
+            <h2 style={{ fontSize: "1.2rem", fontWeight: 700, margin: 0, color: "var(--ink)" }}>
+              Calm Me & Grounding Pause
+            </h2>
+          </div>
         </div>
 
-        <div style={{ display: "flex", gap: 8 }}>
-          <button
-            type="button"
-            onClick={handleSpeakSteps}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <span
             style={{
-              padding: "6px 12px",
+              fontSize: "0.75rem",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              padding: "3px 10px",
               borderRadius: "var(--radius-pill)",
-              background: "var(--peach-200)",
-              color: "var(--peach-900)",
-              border: "none",
-              fontWeight: 600,
-              fontSize: "0.82rem",
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6
+              background: "#ecfdf5",
+              color: "#065f46",
+              border: "1px solid #a7f3d0"
             }}
           >
-            <span>🔊</span>
-            <span>Listen</span>
-          </button>
-          <button
-            type="button"
-            onClick={handleRefreshCalm}
-            disabled={loading}
-            style={{
-              padding: "6px 12px",
-              borderRadius: "var(--radius-pill)",
-              background: "var(--paper)",
-              color: "var(--ink)",
-              border: "1px solid var(--line)",
-              fontWeight: 600,
-              fontSize: "0.82rem",
-              cursor: "pointer"
-            }}
-          >
-            {loading ? "Refreshing…" : "🔄 Refresh Steps"}
-          </button>
+            Sensory Relief
+          </span>
+
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              type="button"
+              onClick={handleSpeakSteps}
+              style={{
+                padding: "6px 12px",
+                borderRadius: "var(--radius-pill)",
+                background: "var(--peach-200)",
+                color: "var(--peach-900)",
+                border: "none",
+                fontWeight: 600,
+                fontSize: "0.82rem",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6
+              }}
+            >
+              <Volume2 size={14} />
+              <span>Listen</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleRefreshCalm}
+              disabled={loading}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "6px 12px",
+                borderRadius: "var(--radius-pill)",
+                background: "var(--paper)",
+                color: "var(--ink)",
+                border: "1px solid var(--line)",
+                fontWeight: 600,
+                fontSize: "0.82rem",
+                cursor: "pointer"
+              }}
+            >
+              <RotateCcw size={14} />
+              <span>{loading ? "Refreshing…" : "Refresh Steps"}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -206,6 +244,9 @@ export const CalmMe: React.FC<CalmMeProps> = ({ onToast, lowStimulation }) => {
           type="button"
           onClick={() => setBreathActive(!breathActive)}
           style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
             padding: "8px 20px",
             borderRadius: "var(--radius-pill)",
             background: breathActive ? "var(--peach-200)" : "var(--spring-green-700)",
@@ -216,7 +257,8 @@ export const CalmMe: React.FC<CalmMeProps> = ({ onToast, lowStimulation }) => {
             cursor: "pointer"
           }}
         >
-          {breathActive ? "⏸ Pause Breath Guide" : "▶️ Start 4-4-4 Box Breathing"}
+          {breathActive ? <Pause size={15} /> : <Play size={15} />}
+          <span>{breathActive ? "Pause Breath Guide" : "Start 4-4-4 Box Breathing"}</span>
         </button>
       </div>
 
@@ -250,10 +292,14 @@ export const CalmMe: React.FC<CalmMeProps> = ({ onToast, lowStimulation }) => {
           paddingTop: 12,
           borderTop: "1px solid var(--line)",
           fontSize: "0.8rem",
-          color: "var(--ink-secondary)"
+          color: "var(--ink-secondary)",
+          display: "flex",
+          alignItems: "center",
+          gap: 6
         }}
       >
-        💡 {disclaimer}
+        <Info size={14} />
+        <span>{disclaimer}</span>
       </div>
     </div>
   );

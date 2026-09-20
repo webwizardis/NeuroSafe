@@ -1,4 +1,14 @@
 import React, { useState, useEffect } from "react";
+import {
+  Monitor,
+  Moon,
+  Sun,
+  Eye,
+  Clock,
+  AlertCircle,
+  Volume2,
+  Check
+} from "lucide-react";
 import { playRewardChime, playTogglePop } from "../utils/audioChime";
 import { speak } from "../utils/speech";
 
@@ -53,7 +63,7 @@ export const ScreenComfortTool: React.FC<ScreenComfortToolProps> = ({ onToast, o
     } else if (is202020Running && secondsRemaining === 0) {
       setIs202020Running(false);
       playRewardChime(0.25);
-      onToast("✨ 20-second eye rest complete! Your optic nerves thank you.", "success");
+      onToast("20-second eye rest complete! Your optic nerves thank you.", "success");
       speak("20-second eye rest complete. Gently open your eyes and blink softly.");
     }
     return () => {
@@ -65,7 +75,7 @@ export const ScreenComfortTool: React.FC<ScreenComfortToolProps> = ({ onToast, o
     setSecondsRemaining(20);
     setIs202020Running(true);
     playTogglePop(true);
-    onToast("🕒 Starting 20-second eye rest. Look at something 20 feet away or close your eyes.", "info");
+    onToast("Starting 20-second eye rest. Look at something 20 feet away or close your eyes.", "info");
     speak("Starting 20-second screen rest. Look away from the display or gently cup your warm palms over closed eyes.");
   };
 
@@ -92,7 +102,7 @@ export const ScreenComfortTool: React.FC<ScreenComfortToolProps> = ({ onToast, o
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 10 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: "1.3rem" }}>🖥️</span>
+            <Monitor size={20} color="var(--green)" />
             <h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 700, color: "var(--ink)" }}>
               Digital Screen & Eye Strain Sanctuary
             </h3>
@@ -117,7 +127,8 @@ export const ScreenComfortTool: React.FC<ScreenComfortToolProps> = ({ onToast, o
             gap: 6
           }}
         >
-          <span>{amberTintActive ? "🌙 Amber Screen Rest Active" : "☀️ Standard Screen"}</span>
+          {amberTintActive ? <Moon size={13} /> : <Sun size={13} />}
+          <span>{amberTintActive ? "Amber Screen Rest Active" : "Standard Screen"}</span>
         </span>
       </div>
 
@@ -142,16 +153,19 @@ export const ScreenComfortTool: React.FC<ScreenComfortToolProps> = ({ onToast, o
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <strong style={{ fontSize: "0.9rem", color: "var(--ink)" }}>
-              🌙 Amber Rest Filter (2700K)
-            </strong>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <Moon size={15} color="#d49c24" />
+              <strong style={{ fontSize: "0.9rem", color: "var(--ink)" }}>
+                Amber Rest Filter (2700K)
+              </strong>
+            </div>
             <button
               type="button"
               onClick={() => {
                 const next = !amberTintActive;
                 setAmberTintActive(next);
                 playTogglePop(next);
-                onToast(next ? "🌙 Amber rest filter turned ON" : "☀️ Amber filter turned OFF", "info");
+                onToast(next ? "Amber rest filter turned ON" : "Amber filter turned OFF", "info");
               }}
               style={{
                 padding: "4px 12px",
@@ -202,9 +216,12 @@ export const ScreenComfortTool: React.FC<ScreenComfortToolProps> = ({ onToast, o
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <strong style={{ fontSize: "0.9rem", color: "var(--ink)" }}>
-              👁️ 20-20-20 Guided Eye Rest
-            </strong>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <Eye size={15} color="var(--green)" />
+              <strong style={{ fontSize: "0.9rem", color: "var(--ink)" }}>
+                20-20-20 Guided Eye Rest
+              </strong>
+            </div>
             <span
               style={{
                 fontSize: "0.78rem",
@@ -233,7 +250,7 @@ export const ScreenComfortTool: React.FC<ScreenComfortToolProps> = ({ onToast, o
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: "1.1rem" }}>🧘</span>
+                <Eye size={16} color="var(--green)" />
                 <span style={{ fontSize: "0.84rem", fontWeight: 600, color: "var(--green)" }}>
                   Eyes closed or looking away…
                 </span>
@@ -273,7 +290,7 @@ export const ScreenComfortTool: React.FC<ScreenComfortToolProps> = ({ onToast, o
                 gap: 6
               }}
             >
-              <span>⏱️</span>
+              <Clock size={14} />
               <span>Start 20-Second Eye Rest</span>
             </button>
           )}
@@ -292,9 +309,12 @@ export const ScreenComfortTool: React.FC<ScreenComfortToolProps> = ({ onToast, o
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <strong style={{ fontSize: "0.9rem", color: "var(--ink)" }}>
-              🛑 Doomscroll Pattern Interrupt
-            </strong>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <AlertCircle size={15} color="#d94168" />
+              <strong style={{ fontSize: "0.9rem", color: "var(--ink)" }}>
+                Doomscroll Pattern Interrupt
+              </strong>
+            </div>
             <button
               type="button"
               onClick={() => {
@@ -397,7 +417,9 @@ export const ScreenComfortTool: React.FC<ScreenComfortToolProps> = ({ onToast, o
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ fontSize: "3rem" }}>🛑</div>
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <AlertCircle size={44} color="#d94168" />
+            </div>
             <div>
               <h2 style={{ margin: "0 0 6px 0", fontSize: "1.4rem", color: "#ffccd8" }}>
                 Screen Loop Interrupt
@@ -419,10 +441,10 @@ export const ScreenComfortTool: React.FC<ScreenComfortToolProps> = ({ onToast, o
                 fontSize: "0.88rem"
               }}
             >
-              <div>🦶 <strong>1. Feel your feet:</strong> Push your heels firmly into the floor.</div>
-              <div>📱 <strong>2. Set device down:</strong> Turn the glass face-down for 60 seconds.</div>
-              <div>🫁 <strong>3. Unclench jaw:</strong> Drop your tongue from the roof of your mouth.</div>
-              <div>💧 <strong>4. Hydrate:</strong> Take a sip of water or wash your face.</div>
+              <div><strong>1. Feel your feet:</strong> Push your heels firmly into the floor.</div>
+              <div><strong>2. Set device down:</strong> Turn the glass face-down for 60 seconds.</div>
+              <div><strong>3. Unclench jaw:</strong> Drop your tongue from the roof of your mouth.</div>
+              <div><strong>4. Hydrate:</strong> Take a sip of water or wash your face.</div>
             </div>
 
             <div style={{ display: "flex", gap: 10 }}>
@@ -434,6 +456,10 @@ export const ScreenComfortTool: React.FC<ScreenComfortToolProps> = ({ onToast, o
                 }}
                 style={{
                   flex: 1,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
                   padding: "10px",
                   borderRadius: "var(--radius-md)",
                   background: "transparent",
@@ -444,13 +470,18 @@ export const ScreenComfortTool: React.FC<ScreenComfortToolProps> = ({ onToast, o
                   cursor: "pointer"
                 }}
               >
-                🔊 Read Aloud
+                <Volume2 size={14} />
+                <span>Read Aloud</span>
               </button>
               <button
                 type="button"
                 onClick={() => setDoomscrollActive(false)}
                 style={{
                   flex: 1,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
                   padding: "10px",
                   borderRadius: "var(--radius-md)",
                   background: "#d94168",
@@ -461,7 +492,8 @@ export const ScreenComfortTool: React.FC<ScreenComfortToolProps> = ({ onToast, o
                   cursor: "pointer"
                 }}
               >
-                I'm Back in the Room ✓
+                <span>I'm Back in the Room</span>
+                <Check size={14} />
               </button>
             </div>
           </div>

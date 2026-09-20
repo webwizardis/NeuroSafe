@@ -1,4 +1,16 @@
 import React, { useState, useEffect } from "react";
+import {
+  CheckSquare,
+  Trophy,
+  Sprout,
+  Sun,
+  Zap,
+  Target,
+  Volume2,
+  List,
+  Sparkles,
+  Check
+} from "lucide-react";
 import { api } from "../services/api";
 import { speak } from "../utils/speech";
 import { playRewardChime } from "../utils/audioChime";
@@ -105,7 +117,7 @@ export const TaskBreakdown: React.FC<TaskBreakdownProps> = ({
       setTrophies(newTrophies);
       localStorage.setItem("neurosafe_executive_trophies", String(newTrophies));
       playRewardChime();
-      onToast("🏆 Executive Victory! Task completed and reward unlocked!", "success");
+      onToast("Executive Victory! Task completed and reward unlocked!", "success");
     }
   }, [completedCount, steps.length, rewardClaimed]);
 
@@ -117,50 +129,81 @@ export const TaskBreakdown: React.FC<TaskBreakdownProps> = ({
       setTrophies(newTrophies);
       localStorage.setItem("neurosafe_executive_trophies", String(newTrophies));
       playRewardChime();
-      onToast("🏆 Executive Victory claimed!", "success");
+      onToast("Executive Victory claimed!", "success");
     }
   };
 
   const handleSpeak = () => {
     if (!rawText) return;
     speak(rawText);
-    onToast("🔊 Reading task steps aloud…", "info");
+    onToast("Reading task steps aloud…", "info");
   };
 
   return (
     <div
       style={{
         background: "var(--card)",
-        border: "1px solid #fde68a",
-        borderTop: "4px solid #f59e0b",
+        border: "1px solid var(--line)",
         borderRadius: "var(--radius-lg)",
         padding: "24px",
         boxShadow: "var(--shadow-sm)"
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: "1.4rem" }}>🎯</span>
-          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "#b45309" }}>
-            Executive Task Breakdown
-          </h2>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: "var(--radius-md)",
+              background: "#fffbeb",
+              border: "1px solid #fde68a",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            }}
+          >
+            <CheckSquare size={20} color="#b45309" />
+          </div>
+          <div>
+            <h2 style={{ fontSize: "1.2rem", fontWeight: 700, margin: 0, color: "var(--ink)" }}>
+              Executive Task Breakdown
+            </h2>
+          </div>
         </div>
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            background: "#fef3c7",
-            padding: "4px 12px",
-            borderRadius: "var(--radius-pill)",
-            border: "1px solid #fde68a",
-            fontSize: "0.8rem",
-            fontWeight: 700,
-            color: "#92400e"
-          }}
-        >
-          <span>🏆</span>
-          <span>{trophies} Executive Trophies</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span
+            style={{
+              fontSize: "0.75rem",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              padding: "3px 10px",
+              borderRadius: "var(--radius-pill)",
+              background: "#fffbeb",
+              color: "#92400e",
+              border: "1px solid #fde68a"
+            }}
+          >
+            Executive Focus
+          </span>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              background: "#fffbeb",
+              padding: "3px 10px",
+              borderRadius: "var(--radius-pill)",
+              border: "1px solid #fde68a",
+              fontSize: "0.78rem",
+              fontWeight: 700,
+              color: "#b45309"
+            }}
+          >
+            <Trophy size={14} />
+            <span>{trophies} Trophies</span>
+          </div>
         </div>
       </div>
 
@@ -236,6 +279,9 @@ export const TaskBreakdown: React.FC<TaskBreakdownProps> = ({
                 type="button"
                 onClick={() => setEnergyLevel(lvl)}
                 style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
                   padding: "5px 12px",
                   borderRadius: "var(--radius-pill)",
                   border: energyLevel === lvl ? "1px solid var(--spring-green-700)" : "1px solid var(--line)",
@@ -247,7 +293,22 @@ export const TaskBreakdown: React.FC<TaskBreakdownProps> = ({
                   textTransform: "capitalize"
                 }}
               >
-                {lvl === "low" ? "🌱 Low Spoon" : lvl === "medium" ? "☀️ Medium" : "⚡ High"}
+                {lvl === "low" ? (
+                  <>
+                    <Sprout size={13} />
+                    <span>Low Spoon</span>
+                  </>
+                ) : lvl === "medium" ? (
+                  <>
+                    <Sun size={13} />
+                    <span>Medium</span>
+                  </>
+                ) : (
+                  <>
+                    <Zap size={13} />
+                    <span>High</span>
+                  </>
+                )}
               </button>
             ))}
           </div>
@@ -272,7 +333,7 @@ export const TaskBreakdown: React.FC<TaskBreakdownProps> = ({
               boxShadow: "0 2px 6px rgba(217, 119, 6, 0.25)"
             }}
           >
-            <span>🎯</span>
+            <Target size={16} />
             <span>{loading ? "Breaking down…" : "Break Down Task"}</span>
           </button>
         </div>
@@ -308,6 +369,9 @@ export const TaskBreakdown: React.FC<TaskBreakdownProps> = ({
                 type="button"
                 onClick={() => setFocusModeOverride(!isStepFocus)}
                 style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
                   padding: "3px 8px",
                   borderRadius: "var(--radius-pill)",
                   background: isStepFocus ? "var(--spring-mint-200)" : "var(--card)",
@@ -318,7 +382,17 @@ export const TaskBreakdown: React.FC<TaskBreakdownProps> = ({
                   cursor: "pointer"
                 }}
               >
-                {isStepFocus ? "🎯 1-Step Focus ON" : "📋 All Steps View"}
+                {isStepFocus ? (
+                  <>
+                    <Target size={12} />
+                    <span>1-Step Focus ON</span>
+                  </>
+                ) : (
+                  <>
+                    <List size={12} />
+                    <span>All Steps View</span>
+                  </>
+                )}
               </button>
             </div>
             <div style={{ display: "flex", gap: 6 }}>
@@ -326,6 +400,9 @@ export const TaskBreakdown: React.FC<TaskBreakdownProps> = ({
                 type="button"
                 onClick={handleSpeak}
                 style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
                   padding: "4px 10px",
                   borderRadius: "var(--radius-pill)",
                   background: "var(--peach-200)",
@@ -336,12 +413,16 @@ export const TaskBreakdown: React.FC<TaskBreakdownProps> = ({
                   cursor: "pointer"
                 }}
               >
-                🔊 Read Steps
+                <Volume2 size={13} />
+                <span>Read Steps</span>
               </button>
               <button
                 type="button"
                 onClick={handleClaimVictory}
                 style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
                   padding: "4px 12px",
                   borderRadius: "var(--radius-pill)",
                   background: "var(--spring-green-700)",
@@ -352,7 +433,8 @@ export const TaskBreakdown: React.FC<TaskBreakdownProps> = ({
                   cursor: "pointer"
                 }}
               >
-                🏆 Mark Task Done
+                <Trophy size={13} />
+                <span>Mark Task Done</span>
               </button>
             </div>
           </div>
@@ -390,7 +472,7 @@ export const TaskBreakdown: React.FC<TaskBreakdownProps> = ({
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                 <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--spring-green-800)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  🎯 Focus On Just This Step ({activeStepIndex + 1} of {steps.length})
+                  Focus On Just This Step ({activeStepIndex + 1} of {steps.length})
                 </span>
                 <span style={{ fontSize: "0.8rem", color: "var(--ink-secondary)" }}>
                   Zero pressure
@@ -435,6 +517,9 @@ export const TaskBreakdown: React.FC<TaskBreakdownProps> = ({
                     }
                   }}
                   style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
                     padding: "6px 16px",
                     borderRadius: "var(--radius-pill)",
                     background: steps[activeStepIndex].done ? "var(--spring-mint-200)" : "var(--spring-green-700)",
@@ -445,7 +530,8 @@ export const TaskBreakdown: React.FC<TaskBreakdownProps> = ({
                     cursor: "pointer"
                   }}
                 >
-                  {steps[activeStepIndex].done ? "✓ Done (Next →)" : "Mark Done & Advance →"}
+                  {steps[activeStepIndex].done && <Check size={14} />}
+                  <span>{steps[activeStepIndex].done ? "Done (Next)" : "Mark Done & Advance"}</span>
                 </button>
               </div>
             </div>
@@ -511,7 +597,10 @@ export const TaskBreakdown: React.FC<TaskBreakdownProps> = ({
                 gap: 8
               }}
             >
-              <div style={{ fontSize: "2.2rem", lineHeight: 1 }}>🏆 🎯 🌟 ✨ 🏅</div>
+              <div style={{ display: "flex", gap: 8, justifyContent: "center", color: "#b45309" }}>
+                <Trophy size={28} />
+                <Sparkles size={28} />
+              </div>
               <strong style={{ fontSize: "1.1rem", color: "var(--spring-green-900)" }}>
                 Executive Victory! Task Conquered
               </strong>
@@ -521,6 +610,9 @@ export const TaskBreakdown: React.FC<TaskBreakdownProps> = ({
               <div style={{ display: "flex", gap: 10, marginTop: 6, flexWrap: "wrap", justifyContent: "center" }}>
                 <span
                   style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 5,
                     fontSize: "0.82rem",
                     fontWeight: 700,
                     color: "var(--spring-green-800)",
@@ -530,7 +622,8 @@ export const TaskBreakdown: React.FC<TaskBreakdownProps> = ({
                     border: "1px solid var(--spring-mint-300)"
                   }}
                 >
-                  🏆 Total Executive Trophies: {trophies}
+                  <Trophy size={13} />
+                  <span>Total Executive Trophies: {trophies}</span>
                 </span>
                 <button
                   type="button"
@@ -551,7 +644,7 @@ export const TaskBreakdown: React.FC<TaskBreakdownProps> = ({
                     cursor: "pointer"
                   }}
                 >
-                  Break Down Another Task 🎯
+                  Break Down Another Task
                 </button>
               </div>
             </div>

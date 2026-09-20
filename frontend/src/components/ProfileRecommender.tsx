@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Sparkles, Sliders, Check } from "lucide-react";
 import { api } from "../services/api";
 import { AccessibilitySettings } from "../types";
 
@@ -53,7 +54,7 @@ export const ProfileRecommender: React.FC<ProfileRecommenderProps> = ({
       };
       const res = await api.approveProfile(merged);
       onApplySettings(res.settings || merged, "Approved AI accessibility profile recommendations");
-      onToast("✨ Approved and applied new accessibility settings!", "success");
+      onToast("Approved and applied new accessibility settings!", "success");
       setSuggestedSettings(null);
       setSuggestionMessage(null);
       setInput("");
@@ -74,15 +75,28 @@ export const ProfileRecommender: React.FC<ProfileRecommenderProps> = ({
         boxShadow: "var(--shadow-sm)"
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-        <span style={{ fontSize: "1.4rem" }}>🤖</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+        <div
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: "var(--radius-md)",
+            background: "var(--spring-mint-200)",
+            color: "var(--spring-green-900)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+        >
+          <Sliders size={18} />
+        </div>
         <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "var(--ink)" }}>
-          AI Natural Language Preference Coach
+          Natural Language Preference Coach
         </h2>
       </div>
 
       <p style={{ margin: "0 0 16px 0", fontSize: "0.88rem", color: "var(--ink-secondary)" }}>
-        Ask in conversational English for any comfort adjustments, and let our accessibility AI
+        Ask in conversational English for any comfort adjustments, and let our accessibility assistant
         configure your workspace safely.
       </p>
 
@@ -109,6 +123,9 @@ export const ProfileRecommender: React.FC<ProfileRecommenderProps> = ({
           onClick={handleGetSuggestions}
           disabled={loading}
           style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
             padding: "10px 18px",
             borderRadius: "var(--radius-md)",
             background: "var(--spring-green-700)",
@@ -119,7 +136,8 @@ export const ProfileRecommender: React.FC<ProfileRecommenderProps> = ({
             cursor: "pointer"
           }}
         >
-          {loading ? "Analyzing…" : "✨ Suggest Profile"}
+          <Sparkles size={16} />
+          {loading ? "Analyzing…" : "Suggest Profile"}
         </button>
       </div>
 
@@ -166,6 +184,9 @@ export const ProfileRecommender: React.FC<ProfileRecommenderProps> = ({
             onClick={handleApprove}
             disabled={approving}
             style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
               padding: "9px 18px",
               borderRadius: "var(--radius-md)",
               background: "var(--spring-green-800)",
@@ -176,7 +197,8 @@ export const ProfileRecommender: React.FC<ProfileRecommenderProps> = ({
               cursor: "pointer"
             }}
           >
-            {approving ? "Applying…" : "✓ Approve & Apply to My App"}
+            <Check size={16} />
+            {approving ? "Applying…" : "Approve & Apply to My App"}
           </button>
         </div>
       )}

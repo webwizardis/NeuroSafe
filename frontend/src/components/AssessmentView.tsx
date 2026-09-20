@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Eye, ListOrdered, FileText, MessageSquare, MapPin, Check, Sparkles } from "lucide-react";
 import { api } from "../services/api";
 import { User, AccessibilitySettings } from "../types";
 
@@ -10,39 +11,56 @@ interface AssessmentViewProps {
 
 interface ProblemItem {
   id: string;
-  icon: string;
+  iconName: "eye" | "tasks" | "reading" | "social" | "travel";
   title: string;
   desc: string;
 }
 
+const renderProblemIcon = (iconName: string) => {
+  switch (iconName) {
+    case "eye":
+      return <Eye size={22} color="var(--spring-green-800)" />;
+    case "tasks":
+      return <ListOrdered size={22} color="#4f46e5" />;
+    case "reading":
+      return <FileText size={22} color="#0284c7" />;
+    case "social":
+      return <MessageSquare size={22} color="#e11d48" />;
+    case "travel":
+      return <MapPin size={22} color="#d97706" />;
+    default:
+      return <Sparkles size={22} />;
+  }
+};
+
 const PROBLEMS: ProblemItem[] = [
   {
     id: "sensory_overload",
-    icon: "🌿",
+    iconName: "eye",
     title: "Sensory Overload & Sensitivity",
     desc: "Sensitive to bright screens, rapid motion, clutter, or loud noises. Need low-stimulation colors and no sudden distractions."
   },
   {
     id: "executive_function",
-    icon: "🎯",
+    iconName: "tasks",
     title: "Executive Function & Starting Tasks",
     desc: "ADHD, task initiation friction, or paralysis. Need large projects broken down into tiny, bite-sized micro-steps."
   },
   {
     id: "reading_processing",
-    icon: "📖",
+    iconName: "reading",
     title: "Reading & Text Processing Fatigue",
     desc: "Dyslexia, dense text exhaustion, or jargon confusion. Need plain-language summaries and audio read-aloud playback."
   },
   {
     id: "social_burnout",
-    icon: "💬",
+    iconName: "social",
     title: "Social Overwhelm & Communication",
     desc: "Autistic burnout or anxiety drafting difficult emails, saying 'no', requesting accommodations, or finding kind words."
   },
   {
     id: "wayfinding_anxiety",
-    icon: "🗺️",
+    iconName: "travel",
     title: "Wayfinding & Travel Anxiety",
     desc: "Overwhelmed in noisy transit, crowded corridors, or unfamiliar streets. Need calm routes avoiding sensory hotspots."
   }
@@ -84,7 +102,7 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
     setLoading(true);
     try {
       const res = await api.customizeProfile(selectedProblems, description);
-      onToast("✨ AI tailored your NeuroSafe experience!", "success");
+      onToast("AI tailored your NeuroSafe experience!", "success");
       onCompleted(res.settings, res.customization_summary, selectedProblems);
     } catch (err: any) {
       onToast(err.message || "Failed to customize profile.", "error");
@@ -225,7 +243,20 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
                     boxShadow: isSelected ? "var(--shadow-sm)" : "none"
                   }}
                 >
-                  <span style={{ fontSize: "1.5rem", lineHeight: 1 }}>{prob.icon}</span>
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: "var(--radius-md)",
+                      background: isSelected ? "#ffffff" : "var(--paper)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0
+                    }}
+                  >
+                    {renderProblemIcon(prob.iconName)}
+                  </div>
                   <div style={{ flex: 1 }}>
                     <div
                       style={{
@@ -260,7 +291,7 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
                           fontWeight: 700
                         }}
                       >
-                        {isSelected ? "✓" : ""}
+                        {isSelected ? <Check size={14} /> : null}
                       </span>
                     </div>
                     <p
@@ -379,7 +410,7 @@ export const AssessmentView: React.FC<AssessmentViewProps> = ({
                 opacity: loading ? 0.7 : 1
               }}
             >
-              <span>✨</span>
+              <Sparkles size={18} />
               <span>{loading ? "AI is Personalizing App…" : "Have AI Customize My App"}</span>
             </button>
 
